@@ -2,7 +2,7 @@ import { Pressable, Text, StyleSheet } from "react-native";
 import React from "react";
 import Colors from "../styles/color";
 
-const AppButton = ({ text, onPress, style }) => {
+const AppButton = ({ text, onPress, style, textStyle }) => {
     const defaultBackgroundColor = Colors.button;
 
     return (
@@ -18,7 +18,7 @@ const AppButton = ({ text, onPress, style }) => {
                 style,
             ]}
         >
-            <Text style={styles.btnText}>{text}</Text>
+            <Text style={[styles.btnText, textStyle]}>{text}</Text>
         </Pressable>
     );
 };
