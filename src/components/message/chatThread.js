@@ -45,7 +45,43 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginHorizontal: 16
   },
-
+  mid: {
+    flex: 1,
+    justifyContent: "center",
+    gap: 6,
+  },
+  threadName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  right: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 8,
+  },
+  time: {
+    fontSize: 12,
+    color: "#999999",
+  },
+  unreadCountContainer: {
+    backgroundColor: "#FF3B30",
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  unreadCountText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
 })
 
 

@@ -6,10 +6,11 @@ import Colors from "../styles/color";
 import TaskCategory from "./taskCategory";
 import ProgressBar from "./progressBar";
 
-const CardTask = ({ name, endDate, comment, progress, category, flag }) => {
+const CardTask = ({ name, endDate, comment, progress, category, flag, bgColor }) => {
+  const bgColors = bgColor;
   return (
     <View style={styles.wrapper}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: bgColors || Colors.frame }]}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Mouse width={24} height={24} />
@@ -23,12 +24,12 @@ const CardTask = ({ name, endDate, comment, progress, category, flag }) => {
           <View style={styles.progress}>
             <TaskCategory
               icon={category}
-              name="In Progress"
+              name={category}
               textColor="#475467"
             />
             <TaskCategory
               icon="flag"
-              name="High"
+              name={flag}
               bgColor="#F95555"
               textColor="white"
             />
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.frame,
     borderRadius: 15,
     padding: 10,
-    width: "90%",
+    width: "100%",
     gap: 10,
   },
   header: {

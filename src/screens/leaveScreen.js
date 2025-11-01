@@ -64,7 +64,7 @@ const mockLeaveData = {
   ],
 };
 
-const LeaveScreen = () => {
+const LeaveScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Review");
 
   const renderLeaveCard = (item) => (
@@ -275,7 +275,7 @@ const LeaveScreen = () => {
       <View style={styles.submitButtonContainer}>
         <AppButton
           text="Submit Leave"
-          onPress={() => console.log("Submit Leave pressed")}
+          onPress={() => navigation.navigate("SubmitLeave")}
           style={styles.submitButton}
           textStyle={styles.submitButtonText}
         />

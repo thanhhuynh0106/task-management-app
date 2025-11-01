@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native"
 import React from "react";
 
-const IconCardText = ({ icon, text, subtext, subtextStyle }) => {
+const IconCardText = ({ icon, text, subtext, subtextStyle, textStyle }) => {
     return (
         <View style={styles.container}>
             <View style={styles.iconContainer}>
@@ -9,7 +9,7 @@ const IconCardText = ({ icon, text, subtext, subtextStyle }) => {
                     {icon}
                 </View>
                 <View style={styles.textContainer}>
-                    <Text style={styles.text}>{text}</Text>
+                    <Text style={[styles.text, textStyle]}>{text}</Text>
                 </View>
             </View>
             <View style={styles.subtextContainer}>
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'column',
         alignItems: 'flex-start',
-        marginHorizontal: 8,
+        marginHorizontal: 4,
         flex: 1,
         backgroundColor: "#efefef54",
         borderRadius: 15,
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     icon: {
-        marginRight: 12,
+        marginRight: 5,
     },
     textContainer: {
         flex: 1,

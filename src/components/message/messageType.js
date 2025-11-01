@@ -1,13 +1,13 @@
 import React from "react";
-import { View, StyleSheet, TextInput } from "react-native";
+import { View, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import AppIcon from "../../components/appIcon";
 import Send from "../../../assets/icons/send.svg";
 import Attach from "../../../assets/icons/attach.svg";
 import Camera from "../../../assets/icons/cam.svg";
 import Colors from "../../styles/color";
-import Micro from "../../../assets/icons/micro.svg"
-import * as ImagePicker from "expo-image-picker"
-import * as Permissions from "expo-permissions"
+import Micro from "../../../assets/icons/micro.svg";
+import * as ImagePicker from "expo-image-picker";
+import * as Permissions from "expo-permissions";
 
 const MessageType = ({ onSendMessage }) => {
   const [message, setMessage] = React.useState("");
@@ -80,8 +80,12 @@ const MessageType = ({ onSendMessage }) => {
           returnKeyType="send"
           onSubmitEditing={handleSend}
         />
-        <Attach width={20} height={20} style={styles.actionIcon} onPress={pickImage} />
-        <Camera width={20} height={20} style={styles.actionIcon} onPress={takePhoto}/>
+        <TouchableOpacity onPress={pickImage} style={styles.actionIconButton}>
+          <Attach width={20} height={20} style={styles.actionIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={takePhoto} style={styles.actionIconButton}>
+          <Camera width={20} height={20} style={styles.actionIcon} />
+        </TouchableOpacity>
       </View>
       { message.trim().length > 0 ? (
         <AppIcon
@@ -134,8 +138,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
   },
-  actionIcon: {
+  actionIconButton: {
     marginLeft: 12,
+    padding: 4,
+  },
+  actionIcon: {
     opacity: 0.65,
   },
   sendBtn: {

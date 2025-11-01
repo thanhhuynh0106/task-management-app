@@ -1,39 +1,70 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { GiftedChat } from 'react-native-gifted-chat';
-import MessageType from './messageType';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Colors from "../../styles/color";
 
-function MessageBubble () {
-  const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    setMessages([
-      {
-        _id: 1,
-        text: 'Hello developer',
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: 'React Native',
-          avatar: 'https://placeimg.com/140/140/any',
-        },
-      },
-    ]);
-  }, []);
-
-  const onSend = useCallback((newMessages = []) => {
-    setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages));
-  }, []);
-
+const MessageBubble = ({ message, isOwn, time }) => {
   return (
-    <GiftedChat
-      messages={messages}
-      onSend={onSend}
-      user={{
-        _id: 1,
-      }}
-      renderInputToolbar={props => <MessageType {...props} />}
-    />
+    <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
+      <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
+        <Text style={[styles.messageText, isOwn ? styles.ownText : styles.otherText]}>
+          {message}
+        </Text>
+        <Text style={[styles.timeText, isOwn ? styles.ownTimeText : styles.otherTimeText]}>
+          {time}
+        </Text>
+      </View>
+    </View>
   );
-}
+};
 
 export default MessageBubble;
+
+const styles = StyleSheet.create({
+  container: {
+    marginVertical: 4,
+    marginHorizontal: 16,
+  },
+  ownContainer: {
+    alignItems: "flex-end",
+  },
+  otherContainer: {
+    alignItems: "flex-start",
+  },
+  bubble: {
+    maxWidth: "75%",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  ownBubble: {
+    backgroundColor: Colors.primary,
+    borderBottomRightRadius: 4,
+  },
+  otherBubble: {
+    backgroundColor: Colors.frame,
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  ownText: {
+    color: "#FFFFFF",
+  },
+  otherText: {
+    color: "#000000",
+  },
+  timeText: {
+    fontSize: 11,
+    alignSelf: "flex-end",
+  },
+  ownTimeText: {
+    color: "#FFFFFF",
+    opacity: 0.8,
+  },
+  otherTimeText: {
+    color: "#666666",
+  },
+});
+

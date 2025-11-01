@@ -8,7 +8,7 @@ import React from "react";
 import BigCard from "../components/clockin/bigCard";
 import { ScrollView } from "react-native";
 
-const ClockinScreen = () => {
+const ClockinScreen = ({ navigation }) => {
   const clockinDays = [
     {
       id: 1,
@@ -53,7 +53,7 @@ const ClockinScreen = () => {
       <HeaderPromo
         text={`Let's Clock-in`}
         subtext={"Start your day and do not forget to clock-in!!"}
-        color={"#7155FF"}
+        color={Colors.primary}
       />
       <View style={styles.summary}>
         <View style={styles.summaryCard}>
@@ -78,7 +78,7 @@ const ClockinScreen = () => {
           <View style={styles.bottom}>
             <AppButton
               text="Clock-in"
-              onPress={() => {}}
+              onPress={() => navigation.navigate("ClockInArea")}
               style={{
                 width: "95%",
                 height: 47,

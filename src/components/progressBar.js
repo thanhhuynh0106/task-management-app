@@ -2,13 +2,17 @@ import React from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import Colors from "../styles/color"
 
-const ProgressBar = ({ progress = 0 }) => {
+const ProgressBar = ({ progress = 0, color }) => {
   const clamped = Math.min(Math.max(progress, 0), 100);
+  const progressColor = color || Colors.primary;
 
   return (
     <View style={styles.container}>
       <Animated.View
-        style={[styles.progress, { width: `${clamped}%` }]}
+        style={[
+          styles.progress, 
+          { width: `${clamped}%`, backgroundColor: progressColor }
+        ]}
       />
     </View>
   );
@@ -25,7 +29,6 @@ const styles = StyleSheet.create({
   },
   progress: {
     height: "100%",
-    backgroundColor: Colors.primary,
     borderRadius: 8,
   },
 });
