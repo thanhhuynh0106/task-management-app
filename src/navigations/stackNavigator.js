@@ -1,13 +1,14 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
-import BottomNavigator from './bottomNavigator';
-import MessageScreen from "../screens/messages/messageScreen";
-import ChatScreen from "../screens/messages/chatScreen";
-import SubmitLeaveScreen from "../screens/submitLeaveScreen";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
 import ClockInAreaScreen from "../screens/clockInAreaScreen";
 import CreateTaskScreen from "../screens/createTaskScreen";
+import ChatScreen from "../screens/messages/chatScreen";
+import MessageScreen from "../screens/messages/messageScreen";
+import SubmitLeaveScreen from "../screens/submitLeaveScreen";
+import BottomNavigator from "./bottomNavigator";
 
-const Stack = createNativeStackNavigator(); 
+
+const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
   return (
@@ -16,7 +17,7 @@ const StackNavigator = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Main" component={BottomNavigator}/> 
+      <Stack.Screen name="Main" component={BottomNavigator} />
       <Stack.Screen name="Message" component={MessageScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="SubmitLeave" component={SubmitLeaveScreen} />

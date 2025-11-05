@@ -1,19 +1,16 @@
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import StackNavigator from "./src/navigations/stackNavigator";
+import { StyleSheet } from "react-native";
+import { AuthProvider } from "./src/contexts/authContext";
+import RootNavigator from "./src/navigations/rootNavigator";
 
 const App = () => {
-    return (
-        <NavigationContainer>
-            <StackNavigator />
-        </NavigationContainer>
-    );
+  return (
+    <AuthProvider>
+      <RootNavigator />
+    </AuthProvider>
+  );
 };
-
 
 export default App;
 
-const styles = StyleSheet.create({
-
-})
+const styles = StyleSheet.create({});
