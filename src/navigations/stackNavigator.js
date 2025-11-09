@@ -6,6 +6,7 @@ import ChatScreen from "../screens/messages/chatScreen";
 import MessageScreen from "../screens/messages/messageScreen";
 import SubmitLeaveScreen from "../screens/submitLeaveScreen";
 import BottomNavigator from "./bottomNavigator";
+import ProfileStackNavigator from "./profileStackNavigatior";
 
 
 const Stack = createNativeStackNavigator();
@@ -17,12 +18,14 @@ const StackNavigator = () => {
         headerShown: false,
       }}
     >
+      
       <Stack.Screen name="Main" component={BottomNavigator} />
       <Stack.Screen name="Message" component={MessageScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="SubmitLeave" component={SubmitLeaveScreen} />
       <Stack.Screen name="ClockInArea" component={ClockInAreaScreen} />
       <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
+      <Stack.Screen name="Profile" component={ProfileStackNavigator} />
     </Stack.Navigator>
   );
 };

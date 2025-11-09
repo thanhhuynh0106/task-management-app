@@ -1,10 +1,10 @@
-import { StatusBar, StyleSheet, Text, View } from "react-native";
 import React from "react";
-import Avatar from "../avatar";
-import AppIcon from "../appIcon";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Message from "../../../assets/icons/message.svg";
-import Colors from "../../styles/color";
 import Notification from "../../../assets/icons/notification.svg";
+import Colors from "../../styles/color";
+import AppIcon from "../appIcon";
+import Avatar from "../avatar";
 
 const UserHeader = ({ username, usermail, useravatar, navigation }) => {
   const usernameText = username;
@@ -12,13 +12,15 @@ const UserHeader = ({ username, usermail, useravatar, navigation }) => {
   const useravatarImage = useravatar;
   return (
     <View style={styles.container}>
-      <View style={styles.left}>
+      <Pressable style={styles.left}
+        onPress={() => navigation.navigate('Profile')}
+      >
         <Avatar name={useravatarImage} width={54} height={54} />
         <View style={styles.leftName}>
           <Text style={styles.leftUsername}>{usernameText}</Text>
           <Text style={styles.leftUsermail}>{usermailText}</Text>
         </View>
-      </View>
+      </Pressable>
       <View style={styles.right}>
         <AppIcon
           icon={<Message width={16} height={16} />}
