@@ -7,6 +7,8 @@ import {
   ScrollView,
   Pressable,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import Colors from "../styles/color";
@@ -19,13 +21,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Category from "../../assets/icons/category.svg";
 import Calendar from "../../assets/icons/calendar-2.svg";
 import Delegation from "../../assets/icons/user_delegation.svg";
+import { leaveService } from "../services";
 
 const mockLeaveCategories = [
-  { id: 1, name: "Annual Leave", days: 20 },
-  { id: 2, name: "Sick Leave", days: 10 },
-  { id: 3, name: "Personal Leave", days: 5 },
-  { id: 4, name: "Maternity Leave", days: 90 },
-  { id: 5, name: "Paternity Leave", days: 14 },
+  { id: 1, name: "Vacation Leave", value: "vacation", days: 12 },
+  { id: 2, name: "Sick Leave", value: "sick", days: 10 },
+  { id: 3, name: "Personal Leave", value: "personal", days: 5 },
 ];
 
 const mockTaskDelegation = [
@@ -350,6 +351,60 @@ const SubmitLeaveScreen = ({ navigation }) => {
   const [tempCountryCode, setTempCountryCode] = useState(null);
   const [emergencyContact, setEmergencyContact] = useState("");
   const [leaveDescription, setLeaveDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitLeave = async () => {
+    if (!selectedCategory) {
+      Alert.alert('Validation Error', 'Please select a leave category');
+      return;
+    }
+
+    if (!selectedDates.start || !selectedDates.end) {
+      Alert.alert('Validation Error', 'Please select leave duration');
+      return;
+    }
+
+    if (!leaveDescription.trim()) {
+      Alert.alert('Validation Error', 'Please provide a reason for your leave');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const leaveData = {
+        type: selectedCategory.value,
+        startDate: selectedDates.start.toISOString(),
+        endDate: selectedDates.end.toISOString(),
+        reason: leaveDescription.trim(),
+      };
+
+      const response = await leaveService.submitLeave(leaveData);
+
+      if (response.success) {
+        Alert.alert(
+          'Success',
+          'Your leave request has been submitted successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to submit leave request');
+      }
+    } catch (error) {
+      console.error('Submit leave error:', error);
+      Alert.alert(
+        'Error',
+        error.error || 'Failed to submit leave request. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -451,18 +506,19 @@ const SubmitLeaveScreen = ({ navigation }) => {
 
       <View style={styles.submitButtonContainer}>
         <AppButton
-          text="Submit Request"
-          onPress={() => {
-            console.log("Submit request", {
-              category: selectedCategory,
-              dates: selectedDates,
-              delegate: selectedDelegate,
-            });
-            navigation.goBack();
-          }}
-          style={styles.submitButton}
+          text={isSubmitting ? "Submitting..." : "Submit Request"}
+          onPress={handleSubmitLeave}
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
           textStyle={styles.submitButtonText}
+          disabled={isSubmitting}
         />
+        {isSubmitting && (
+          <ActivityIndicator
+            size="small"
+            color={Colors.primary}
+            style={styles.loadingIndicator}
+          />
+        )}
       </View>
 
       {renderBottomModal(
@@ -669,9 +725,18 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
   },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
   submitButtonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  loadingIndicator: {
+    position: "absolute",
+    right: 40,
+    top: "50%",
+    marginTop: -10,
   },
   modalOverlay: {
     flex: 1,

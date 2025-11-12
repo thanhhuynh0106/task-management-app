@@ -3,9 +3,10 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView, // ← Thêm import này
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -54,7 +55,7 @@ const SignUpScreen = ({ navigation }) => {
     control,
     handleSubmit,
     formState: { errors },
-    setFocus, // ← Thêm để auto-focus field lỗi (bonus UX)
+    setFocus,
   } = useForm({
     resolver: yupResolver(validationSchema),
     defaultValues: {
@@ -69,10 +70,21 @@ const SignUpScreen = ({ navigation }) => {
 
   const onSubmit = async (data) => {
     const { email, phone, companyId, password } = data;
-    // TODO: Implement sign up logic (gọi API thực)
-    // const token = await api.signUp({ email, phone, companyId, password });
-    const token = "your_auth_token_here"; // Replace with actual token from API
-    await signUp(token);
+    const userData = {
+      email: email.trim(),
+      password: password.trim(),
+      profile: {
+        fullName: email.split("@")[0], // add field fullname later
+        employeeId: companyId.trim(), // check this later
+        department: null, // add field department later
+        position: null
+      }
+    }
+    const result = await signUp(userData);
+    if (!result.success) {
+      Alert.alert("Error", result.message || "Failed to sign up.");
+      return;
+    }
   };
 
   const onInvalid = () => {

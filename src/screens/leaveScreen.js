@@ -4,8 +4,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
+  Alert,
+  ActivityIndicator
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import HeaderPromo from "../components/headerPromo";
 import Colors from "../styles/color";
 import IconCardText from "../components/iconCardText";
@@ -15,106 +18,160 @@ import AppButton from "../components/appButton";
 import NoLeave from "../../assets/icons/no_leave.svg";
 import Approved from "../../assets/icons/approved.svg";
 import Rejected from "../../assets/icons/rejected.svg";
-
-const mockLeaveData = {
-  review: [
-    // { id: 1, title: "5 Nov 2025", startDate: "5 Nov", endDate: "5 Nov", totalDays: 1, status: "review", reviewer: "Manager A" },
-    // { id: 2, title: "15 Dec 2025", startDate: "15 Dec", endDate: "17 Dec", totalDays: 3, status: "review", reviewer: "Manager B" },
-  ],
-  approved: [
-    {
-      id: 3,
-      title: "10 Oct 2025",
-      startDate: "10 Oct",
-      endDate: "12 Oct",
-      totalDays: 3,
-      status: "approved",
-      approvedBy: "HR Team",
-    },
-    {
-      id: 4,
-      title: "20 Sep2025",
-      startDate: "20 Sep",
-      endDate: "20 Sep",
-      totalDays: 1,
-      status: "approved",
-      approvedBy: "Manager A",
-    },
-    {
-      id: 5,
-      title: "1 Aug 2025",
-      startDate: "1 Aug",
-      endDate: "5 Aug",
-      totalDays: 5,
-      status: "approved",
-      approvedBy: "Manager C",
-    },
-  ],
-  rejected: [
-    {
-      id: 6,
-      title: "25 Oct 2025",
-      startDate: "25 Oct",
-      endDate: "25 Oct",
-      totalDays: 1,
-      status: "rejected",
-      rejectedBy: "Manager B",
-      reason: "Lack of coverage",
-    },
-  ],
-};
+import { leaveService } from "../services";
+import { useAuth } from "../contexts/authContext";
 
 const LeaveScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Review");
+  
+  const { user } = useAuth();
+  const [leaves, setLeaves] = useState({ pending: [], approved: [], rejected: [] });
+  const [balance, setBalance] = useState({ total: 12, used: 0, remaining: 12 });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const renderLeaveCard = (item) => (
-    <View key={item.id} style={styles.leaveCard}>
-      <View style={styles.leaveHeader}>
-        <Text style={styles.leaveDate}>{item.title}</Text>
-      </View>
+  useEffect(() => {
+    loadData();
+  }, []);
 
-      <View style={styles.leaveDetails}>
-        <View style={styles.leaveRow}>
-          <Text style={styles.leaveLabel}>Leave Date</Text>
-          <Text style={styles.leaveLabel}>Total Leave</Text>
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        loadLeaves(),
+        loadBalance()
+      ]);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load data. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const loadLeaves = async () => {
+    try {
+      const response = await leaveService.getMyLeaves();
+      const allLeaves = response.data || [];
+      
+      const grouped = {
+        pending: allLeaves.filter(leave => leave.status === 'pending'),
+        approved: allLeaves.filter(leave => leave.status === 'approved'),
+        rejected: allLeaves.filter(leave => leave.status === 'rejected')
+      };
+      
+      setLeaves(grouped);
+    } catch (error) {
+      console.error('Error loading leaves:', error);
+      Alert.alert('Error', 'Failed to load leaves');
+    }
+  }
+
+  const loadBalance = async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const response = await leaveService.getLeaveBalance(currentYear);
+      
+      if (response.success && response.data?.balance) {
+        setBalance(response.data.balance);
+      }
+    } catch (error) {
+      console.error('Error loading balance:', error);
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  const formatShortDate = (dateString) => {
+    const date = new Date(dateString);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  const renderLeaveCard = (item) => {
+    const startDateFormatted = formatDate(item.startDate);
+    const endDateFormatted = formatDate(item.endDate);
+    const title = formatShortDate(item.startDate);
+    
+    return (
+      <View key={item._id} style={styles.leaveCard}>
+        <View style={styles.leaveHeader}>
+          <Text style={styles.leaveDate}>{title}</Text>
+          <Text style={styles.leaveType}>{item.type?.toUpperCase() || 'LEAVE'}</Text>
         </View>
-        <View style={styles.leaveRow}>
-          <Text style={styles.leaveValue}>
-            {item.startDate} - {item.endDate}
-          </Text>
-          <Text style={styles.leaveValue}>
-            {item.totalDays} {item.totalDays > 1 ? "Days" : "Day"}
-          </Text>
+
+        <View style={styles.leaveDetails}>
+          <View style={styles.leaveRow}>
+            <Text style={styles.leaveLabel}>Leave Date</Text>
+            <Text style={styles.leaveLabel}>Total Leave</Text>
+          </View>
+          <View style={styles.leaveRow}>
+            <Text style={styles.leaveValue}>
+              {startDateFormatted} - {endDateFormatted}
+            </Text>
+            <Text style={styles.leaveValue}>
+              {item.numberOfDays} {item.numberOfDays > 1 ? "Days" : "Day"}
+            </Text>
+          </View>
+          
+          {item.reason && (
+            <View style={styles.reasonContainer}>
+              <Text style={styles.reasonLabel}>Reason:</Text>
+              <Text style={styles.reasonText}>{item.reason}</Text>
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.statusContainer}>
+          {selectedTab === "Approved" && item.approvedAt && (
+            <View style={[styles.pill, styles.pillApproved]}>
+              <Approved width={16} height={16} />
+              <Text style={styles.pillTextApp}>
+                Approved on {formatShortDate(item.approvedAt)}
+              </Text>
+            </View>
+          )}
+          {selectedTab === "Rejected" && item.rejectionReason && (
+            <View style={[styles.pill, styles.pillRejected]}>
+              <Rejected width={16} height={16} />
+              <Text style={styles.pillTextRej}>{item.rejectionReason}</Text>
+            </View>
+          )}
         </View>
       </View>
-      <View style={styles.statusContainer}>
-        {selectedTab === "Approved" && !!item.approvedBy && (
-          <View style={[styles.pill, styles.pillApproved]}>
-            <Approved width={16} height={16} />
-            <Text style={styles.pillTextApp}>Approved at ...</Text>
-          </View>
-        )}
-        {selectedTab === "Rejected" && !!item.rejectedBy && (
-          <View style={[styles.pill, styles.pillRejected]}>
-            <Rejected width={16} height={16} />
-            <Text style={styles.pillTextRej}>Rejected at ... modify date</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderTabContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading leaves...</Text>
+        </View>
+      );
+    }
+
     let data = [];
     switch (selectedTab) {
       case "Review":
-        data = mockLeaveData.review;
+        data = leaves.pending;
         break;
       case "Approved":
-        data = mockLeaveData.approved;
+        data = leaves.approved;
         break;
       case "Rejected":
-        data = mockLeaveData.rejected;
+        data = leaves.rejected;
         break;
       default:
         data = [];
@@ -148,7 +205,7 @@ const LeaveScreen = ({ navigation }) => {
               style={{ marginTop: 8, textAlign: "center", color: "#7b7b7bff" }}
             >
               Ready to catch some fresh air? Click the "Submit leave" and take
-              that well-deserve break. .
+              that well-deserved break.
             </Text>
           </View>
         </View>
@@ -174,14 +231,14 @@ const LeaveScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.headerText}>Total Leave</Text>
           <Text style={styles.headerSubtext}>
-            Period 1 Jan 2024 - 30 Dec 2024
+            Period 1 Jan {new Date().getFullYear()} - 30 Dec {new Date().getFullYear()}
           </Text>
         </View>
         <View style={styles.body}>
           <IconCardText
             icon={<Available width={10} height={10} />}
             text={"Available"}
-            subtext={20}
+            subtext={balance.remaining || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",
@@ -190,7 +247,7 @@ const LeaveScreen = ({ navigation }) => {
           <IconCardText
             icon={<Used width={10} height={10} />}
             text={"Leave Used"}
-            subtext={2}
+            subtext={balance.used || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",
@@ -212,10 +269,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Review
           </Text>
-          {mockLeaveData.review.length > 0 && (
+          {leaves.pending.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {mockLeaveData.review.length}
+                {leaves.pending.length}
               </Text>
             </View>
           )}
@@ -233,10 +290,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Approved
           </Text>
-          {mockLeaveData.approved.length > 0 && (
+          {leaves.approved.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {mockLeaveData.approved.length}
+                {leaves.approved.length}
               </Text>
             </View>
           )}
@@ -254,10 +311,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Rejected
           </Text>
-          {mockLeaveData.rejected.length > 0 && (
+          {leaves.rejected.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {mockLeaveData.rejected.length}
+                {leaves.rejected.length}
               </Text>
             </View>
           )}
@@ -268,6 +325,14 @@ const LeaveScreen = ({ navigation }) => {
         style={styles.scrollViewContent}
         contentContainerStyle={styles.scrollViewContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
       >
         {renderTabContent()}
       </ScrollView>
@@ -401,11 +466,23 @@ const styles = StyleSheet.create({
   },
   leaveHeader: {
     marginBottom: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   leaveDate: {
     fontSize: 16,
     fontWeight: "600",
     color: "#000000",
+  },
+  leaveType: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.primary,
+    backgroundColor: "#E6E0FF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   leaveDetails: {
     backgroundColor: Colors.gray,
@@ -460,5 +537,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 24,
+  },
+  reasonContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderGray,
+  },
+  reasonLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666666",
+    marginBottom: 4,
+  },
+  reasonText: {
+    fontSize: 13,
+    color: "#000000",
+    lineHeight: 18,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#666666",
   },
 });

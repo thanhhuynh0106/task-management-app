@@ -3,6 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -26,7 +27,6 @@ const SignInScreen = ({ navigation }) => {
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
-  // Schema validation với Yup
   const validationSchema = Yup.object({
     email: Yup.string()
       .email("Invalid email format")
@@ -50,15 +50,11 @@ const SignInScreen = ({ navigation }) => {
 
   const onSubmit = async (data) => {
     const { email, password } = data;
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    if (!trimmedEmail || !trimmedPassword) {
-      // TODO: Thêm alert hoặc error message nếu cần
+    const result = await signIn(email.trim(), password.trim());
+    if (!result.success) {
+      Alert.alert("Error", result.message || "Failed to sign in.");
       return;
     }
-    // TODO: Implement sign in logic (gọi API để lấy token thực)
-    // const token = await api.signIn(trimmedEmail, trimmedPassword);
-    const token = "your_auth_token_here"; // Replace with actual token from API
     await signIn(token);
   };
 
