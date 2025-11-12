@@ -1,12 +1,11 @@
 import React from "react";
+import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import UserHeader from "../components/home/userHeader";
-import { StatusBar, View, StyleSheet, ScrollView } from "react-native";
-import Colors from "../styles/color";
-import WelcomeCard from "../components/home/welcomeCard";
 import Schedules from "../components/home/schedules";
-import CardTask from "../components/cardTask";
 import TaskCard from "../components/home/taskCard";
+import UserHeader from "../components/home/userHeader";
+import WelcomeCard from "../components/home/welcomeCard";
+import Colors from "../styles/color";
 
 
 const HomeScreen = ({ navigation }) => {
