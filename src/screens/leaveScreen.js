@@ -1,14 +1,5 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  Alert,
-  ActivityIndicator
-} from "react-native";
-import React, { useEffect, useState } from "react";
+import {  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert, ActivityIndicator } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
 import HeaderPromo from "../components/headerPromo";
 import Colors from "../styles/color";
 import IconCardText from "../components/iconCardText";
@@ -18,65 +9,46 @@ import AppButton from "../components/appButton";
 import NoLeave from "../../assets/icons/no_leave.svg";
 import Approved from "../../assets/icons/approved.svg";
 import Rejected from "../../assets/icons/rejected.svg";
-import { leaveService } from "../services";
 import { useAuth } from "../contexts/authContext";
+import { useLeaveStore } from "../../store";
 
 const LeaveScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Review");
+  const [refreshing, setRefreshing] = useState(false);
   
   const { user } = useAuth();
-  const [leaves, setLeaves] = useState({ pending: [], approved: [], rejected: [] });
-  const [balance, setBalance] = useState({ total: 12, used: 0, remaining: 12 });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  
+  const { 
+    leaves: allLeaves,
+    leaveBalance,
+    isLoading,
+    error,
+    fetchLeaves,
+    fetchLeaveBalance,
+    clearError
+  } = useLeaveStore();
+
 
   useEffect(() => {
     loadData();
   }, []);
 
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+      clearError();
+    }
+  }, [error]);
+
   const loadData = async () => {
     try {
-      setLoading(true);
       await Promise.all([
-        loadLeaves(),
-        loadBalance()
+        fetchLeaves(),
+        fetchLeaveBalance()
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load data. Please check your connection.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const loadLeaves = async () => {
-    try {
-      const response = await leaveService.getMyLeaves();
-      const allLeaves = response.data || [];
-      
-      const grouped = {
-        pending: allLeaves.filter(leave => leave.status === 'pending'),
-        approved: allLeaves.filter(leave => leave.status === 'approved'),
-        rejected: allLeaves.filter(leave => leave.status === 'rejected')
-      };
-      
-      setLeaves(grouped);
-    } catch (error) {
-      console.error('Error loading leaves:', error);
-      Alert.alert('Error', 'Failed to load leaves');
-    }
-  }
-
-  const loadBalance = async () => {
-    try {
-      const currentYear = new Date().getFullYear();
-      const response = await leaveService.getLeaveBalance(currentYear);
-      
-      if (response.success && response.data?.balance) {
-        setBalance(response.data.balance);
-      }
-    } catch (error) {
-      console.error('Error loading balance:', error);
     }
   }
 
@@ -85,6 +57,15 @@ const LeaveScreen = ({ navigation }) => {
     await loadData();
     setRefreshing(false);
   }
+
+  // Group leaves by status - use useMemo để tránh re-compute
+  const groupedLeaves = useMemo(() => {
+    return {
+      pending: allLeaves.filter(leave => leave.status === 'pending'),
+      approved: allLeaves.filter(leave => leave.status === 'approved'),
+      rejected: allLeaves.filter(leave => leave.status === 'rejected')
+    };
+  }, [allLeaves]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -153,7 +134,7 @@ const LeaveScreen = ({ navigation }) => {
   };
 
   const renderTabContent = () => {
-    if (loading) {
+    if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -165,13 +146,13 @@ const LeaveScreen = ({ navigation }) => {
     let data = [];
     switch (selectedTab) {
       case "Review":
-        data = leaves.pending;
+        data = groupedLeaves.pending;
         break;
       case "Approved":
-        data = leaves.approved;
+        data = groupedLeaves.approved;
         break;
       case "Rejected":
-        data = leaves.rejected;
+        data = groupedLeaves.rejected;
         break;
       default:
         data = [];
@@ -238,7 +219,7 @@ const LeaveScreen = ({ navigation }) => {
           <IconCardText
             icon={<Available width={10} height={10} />}
             text={"Available"}
-            subtext={balance.remaining || 0}
+            subtext={leaveBalance.remainingDays || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",
@@ -247,7 +228,7 @@ const LeaveScreen = ({ navigation }) => {
           <IconCardText
             icon={<Used width={10} height={10} />}
             text={"Leave Used"}
-            subtext={balance.used || 0}
+            subtext={leaveBalance.usedDays || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",
@@ -269,10 +250,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Review
           </Text>
-          {leaves.pending.length > 0 && (
+          {groupedLeaves.pending.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {leaves.pending.length}
+                {groupedLeaves.pending.length}
               </Text>
             </View>
           )}
@@ -290,10 +271,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Approved
           </Text>
-          {leaves.approved.length > 0 && (
+          {groupedLeaves.approved.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {leaves.approved.length}
+                {groupedLeaves.approved.length}
               </Text>
             </View>
           )}
@@ -311,10 +292,10 @@ const LeaveScreen = ({ navigation }) => {
           >
             Rejected
           </Text>
-          {leaves.rejected.length > 0 && (
+          {groupedLeaves.rejected.length > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {leaves.rejected.length}
+                {groupedLeaves.rejected.length}
               </Text>
             </View>
           )}

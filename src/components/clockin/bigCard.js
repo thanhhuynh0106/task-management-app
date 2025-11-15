@@ -3,11 +3,11 @@ import React from 'react'
 import Colors from '../../styles/color'
 import SmallCard from './smallCard'
 
-const BigCard = ({day}) => {
+const BigCard = ({day, totalHours, inOutTime}) => {
     return (
         <View style={styles.container}>
             <Text style={styles.dayText}>{day}</Text>
-            <SmallCard totalHours={"08:00 hrs"} inOutTime={"09:00 AM - 05:30 PM"}/>            
+            <SmallCard totalHours={totalHours} inOutTime={inOutTime}/>            
         </View>
     )
 }

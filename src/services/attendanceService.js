@@ -8,7 +8,11 @@ const attendanceService = {
    */
   clockIn: async (location) => {
     try {
-      const response = await apiClient.post('/attendance/clock-in', { location });
+      // Backend expects { lat, lng } not { location: { lat, lng } }
+      const response = await apiClient.post('/attendance/clockin', {
+        lat: location.lat,
+        lng: location.lng
+      });
       return response;
     } catch (error) {
       throw error;
@@ -21,7 +25,7 @@ const attendanceService = {
    */
   clockOut: async () => {
     try {
-      const response = await apiClient.put('/attendance/clock-out');
+      const response = await apiClient.post('/attendance/clockout');
       return response;
     } catch (error) {
       throw error;
@@ -99,4 +103,7 @@ const attendanceService = {
 };
 
 export default attendanceService;
+
+
+
 
