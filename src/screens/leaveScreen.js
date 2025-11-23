@@ -1,16 +1,16 @@
-import {  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert, ActivityIndicator } from "react-native";
-import React, { useEffect, useState, useMemo } from "react";
-import HeaderPromo from "../components/headerPromo";
-import Colors from "../styles/color";
-import IconCardText from "../components/iconCardText";
-import Available from "../../assets/icons/available.svg";
-import Used from "../../assets/icons/used.svg";
-import AppButton from "../components/appButton";
-import NoLeave from "../../assets/icons/no_leave.svg";
+import React, { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Approved from "../../assets/icons/approved.svg";
+import Available from "../../assets/icons/available.svg";
+import NoLeave from "../../assets/icons/no_leave.svg";
 import Rejected from "../../assets/icons/rejected.svg";
-import { useAuth } from "../contexts/authContext";
+import Used from "../../assets/icons/used.svg";
 import { useLeaveStore } from "../../store";
+import AppButton from "../components/appButton";
+import HeaderPromo from "../components/headerPromo";
+import IconCardText from "../components/task/iconCardText";
+import { useAuth } from "../contexts/authContext";
+import Colors from "../styles/color";
 
 const LeaveScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Review");

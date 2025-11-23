@@ -1,27 +1,15 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
 import React from "react";
-import AppNumber from "../appNumber";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import NoSchedule from "../../../assets/icons/no_schedules.svg";
+import { useTaskStore } from '../../../store';
 import Colors from "../../styles/color";
+import AppNumber from "../appNumber";
 import CardMeeting from "../cardMeeting";
 
-const Schedules = (props) => {
-  const schedules = [
-    {
-      name: "Meeting with Team",
-      timeStart: "10:00",
-      timeEnd: "12:00",
-      description: "Discuss project updates",
-      assignees: ["avt1", "avt2"],
-    },
-    {
-      name: "Client Call",
-      timeStart: "14:00",
-      timeEnd: "15:00",
-      description: "Monthly check-in with client",
-      assignees: ["avt3"],
-    },
-  ];
+
+const Schedules = ({navigation}) => {
+  const { myTasks } = useTaskStore(); // Lấy task thật
+  const schedules = myTasks.slice(0, 3); // Hiển thị tối đa 3
 
   return (
     <ScrollView>

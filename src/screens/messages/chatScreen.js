@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Colors from "../../styles/color";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import MessageBubble from "../../components/message/messageBubble";
 import MessageType from "../../components/message/messageType";
+import Colors from "../../styles/color";
 
 const mockMessages = [
   {

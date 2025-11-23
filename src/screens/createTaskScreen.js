@@ -1,25 +1,24 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
   Modal,
   Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Colors from "../styles/color";
-import HeaderWithBackButton from "../components/headerWithBackButton";
-import AppButton from "../components/appButton";
-import ChevronDown from "../../assets/icons/chevron_down.svg";
-import Upload from "../../assets/icons/upload.svg";
 import Category from "../../assets/icons/category.svg";
-import UserIcon from "../../assets/icons/user_delegation.svg";
-import Flag from "../../assets/icons/flag.svg";
-import Priority from "../../assets/icons/priority.svg";
+import ChevronDown from "../../assets/icons/chevron_down.svg";
 import Difficulty from "../../assets/icons/difficulty.svg";
+import Priority from "../../assets/icons/priority.svg";
+import Upload from "../../assets/icons/upload.svg";
+import UserIcon from "../../assets/icons/user_delegation.svg";
+import AppButton from "../components/appButton";
+import HeaderWithBackButton from "../components/headerWithBackButton";
+import Colors from "../styles/color";
 
 const mockMembers = [
   { id: 1, name: "John Doe", role: "Developer" },

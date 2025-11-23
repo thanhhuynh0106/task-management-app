@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet } from "react-native";
 import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import Clock from "../../assets/icons/clock.svg";
+import Meeting from "../../assets/icons/meeting.svg";
 import AppButton from "../components/appButton";
 import Colors from "../styles/color";
 import AppIcon from "./appIcon";
-import Meeting from "../../assets/icons/meeting.svg";
-import Clock from "../../assets/icons/clock.svg";
 import Avatar from "./avatar";
 
 const CardMeeting = ({ name, timeStart, timeEnd, description, assignees }) => {
@@ -31,7 +31,7 @@ const CardMeeting = ({ name, timeStart, timeEnd, description, assignees }) => {
         <Text style={styles.description}>{description}</Text>
         <View style={styles.bottom}>
           <View style={{ flexDirection: "row"}}>
-            {assignees.map((assigneeName, index) => (
+            {(assignees || []).map((assigneeName, index) => (
               <Avatar
                 key={index}
                 name={assigneeName}
@@ -92,11 +92,5 @@ const styles = StyleSheet.create({
     fontWeight: "450",
     color: "#555555ff",
   },
-  bottom: {
-    alignContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 5,
-  }
+
 });

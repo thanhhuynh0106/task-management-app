@@ -1,21 +1,20 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
-import HomeScreen from "../screens/homeScreen";
-import ClockinScreen from "../screens/clockinScreen";
-import TeamScreen from "../screens/teamScreen";
-import LeaveScreen from "../screens/leaveScreen";
-import TaskScreen from "../screens/taskScreen";
-import HomeAc from "../../assets/icons/home_ac.svg"
-import HomeInac from "../../assets/icons/home_inac.svg"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
-import CalendarAc from "../../assets/icons/calendar_ac.svg"
-import CalendarInac from "../../assets/icons/calendar_inac.svg"
-import TaskAc from "../../assets/icons/task_ac.svg"
-import TaskInac from "../../assets/icons/task_inac.svg"
-import TeamAc from "../../assets/icons/team_ac.svg"
-import TeamInac from "../../assets/icons/team_inac.svg"
-import LeaveAc from "../../assets/icons/leave_ac.svg"
-import LeaveInac from "../../assets/icons/leave_inac.svg"
+import CalendarAc from "../../assets/icons/calendar_ac.svg";
+import CalendarInac from "../../assets/icons/calendar_inac.svg";
+import HomeAc from "../../assets/icons/home_ac.svg";
+import HomeInac from "../../assets/icons/home_inac.svg";
+import LeaveAc from "../../assets/icons/leave_ac.svg";
+import LeaveInac from "../../assets/icons/leave_inac.svg";
+import TaskAc from "../../assets/icons/task_ac.svg";
+import TaskInac from "../../assets/icons/task_inac.svg";
+import TeamAc from "../../assets/icons/team_ac.svg";
+import TeamInac from "../../assets/icons/team_inac.svg";
+import ClockinScreen from "../screens/clockinScreen";
 import CreateTaskScreen from "../screens/createTaskScreen";
+import HomeScreen from "../screens/homeScreen";
+import LeaveScreen from "../screens/leaveScreen";
+import TaskNavigator from "./taskNavigator";
 
 const Bottom = createBottomTabNavigator();
 
@@ -54,7 +53,7 @@ const BottomNavigator = () => {
             />
             <Bottom.Screen
                 name="task"
-                component={TaskScreen}
+                component={TaskNavigator}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         focused ? <TaskAc width={28} height={28} /> : <TaskInac width={28} height={28} />

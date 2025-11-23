@@ -3,7 +3,7 @@ import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import Colors from "../../../styles/color";
 import CardMeeting from "../../cardMeeting";
-import CardTask from "../../cardTask";
+import CardTask from "../../task/cardTask";
 
 const { width, height } = Dimensions.get("window");
 

@@ -1,77 +1,141 @@
+// components/home/userHeader.js
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Message from "../../../assets/icons/message.svg";
 import Notification from "../../../assets/icons/notification.svg";
+import { useAuth } from "../../../src/contexts/authContext";
 import Colors from "../../styles/color";
 import AppIcon from "../appIcon";
 import Avatar from "../avatar";
+import NotificationBadge from "./notificationBadge";
 
-const UserHeader = ({ username, usermail, useravatar, navigation }) => {
-  const usernameText = username;
-  const usermailText = usermail;
-  const useravatarImage = useravatar;
+const UserHeader = ({ navigation }) => {
+  const { user, isLoading } = useAuth();
+
+  // Loading state
+  if (isLoading || !user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.left}>
+          <View style={[styles.avatar, { backgroundColor: '#eee' }]} />
+          <View>
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const displayName = user.profile?.fullName || user.email?.split('@')[0] || "User";
+  const email = user.email || "";
+  const avatarKey = user.profile?.avatar || user.avatar || "default";
+
   return (
     <View style={styles.container}>
-      <Pressable style={styles.left}
+      <Pressable
+        style={styles.left}
         onPress={() => navigation.navigate('Profile')}
       >
-        <Avatar name={useravatarImage} width={54} height={54} />
+        <View style={styles.avatarWrapper}>
+          <Avatar name={avatarKey} width={54} height={54} />
+          {user.isOnline && <View style={styles.onlineDot} />}
+        </View>
+
         <View style={styles.leftName}>
-          <Text style={styles.leftUsername}>{usernameText}</Text>
-          <Text style={styles.leftUsermail}>{usermailText}</Text>
+          <Text style={styles.leftUsername} numberOfLines={1}>
+            {displayName}
+          </Text>
+          <Text style={styles.leftUsermail} numberOfLines={1}>
+            {email}
+          </Text>
         </View>
       </Pressable>
+
       <View style={styles.right}>
         <AppIcon
-          icon={<Message width={16} height={16} />}
-          width={40}
-          height={40}
+          icon={<Message width={18} height={18} />}
+          width={44}
+          height={44}
           color={Colors.secondary}
           onPress={() => navigation.navigate('Message')}
         />
-        <AppIcon
-          icon={<Notification width={16} height={16} />}
-          width={40}
-          height={40}
-          color={Colors.secondary}
-          onPress={() => {}}
-        />
+
+        <View style={styles.notificationWrapper}>
+          <AppIcon
+            icon={<Notification width={18} height={18} />}
+            width={44}
+            height={44}
+            color={Colors.secondary}
+            onPress={() => navigation.navigate('Notification')}
+          />
+          <NotificationBadge />
+        </View>
       </View>
     </View>
   );
 };
-
-export default UserHeader;
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     alignItems: "center",
-    marginBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
   left: {
     flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  avatarWrapper: {
+    position: "relative",
+    marginRight: 14,
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#34C759",
+    borderWidth: 3,
+    borderColor: Colors.white,
+  },
+  leftName: {
+    flex: 1,
+  },
+  leftUsername: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  leftUsermail: {
+    fontSize: 13,
+    color: Colors.primary,
+    marginTop: 2,
   },
   right: {
     flexDirection: "row",
     gap: 12,
-    marginRight: 5,
+    alignItems: "center",
   },
-  leftName: {
-    marginLeft: 15,
-    justifyContent: "center",
-    alignContent: "center",
-    alignItems: "flex-start",
+  notificationWrapper: {
+    position: "relative",
   },
-  leftUsermail: {
-    fontSize: 12,
-    color: Colors.primary
-  },
-  leftUsername: {
+  loadingText: {
     fontSize: 16,
-    fontWeight: "600",
-  }
+    color: "#999",
+  },
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+  },
 });
+
+export default UserHeader;

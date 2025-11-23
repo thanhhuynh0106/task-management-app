@@ -1,13 +1,12 @@
-import { Text, View, StyleSheet, ScrollView } from "react-native";
 import React from "react";
-import Colors from "../styles/color";
-import HeaderPromo from "../components/headerPromo";
-import IconCardText from "../components/iconCardText";
-import { CategoryMap } from "../utils/categoryMapping";
-import TaskStatusCard from "../components/task/taskStatusCard";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import NoTask from "../../assets/icons/notask.svg";
-import { TouchableOpacity } from "react-native";
-import CardTask from "../components/cardTask"
+import HeaderPromo from "../components/headerPromo";
+import CardTask from "../components/task/cardTask";
+import IconCardText from "../components/task/iconCardText";
+import TaskStatusCard from "../components/task/taskStatusCard";
+import Colors from "../styles/color";
+import { CategoryMap } from "../utils/categoryMapping";
 
 const TaskScreen = () => {
   const Todo = CategoryMap["todo"];
