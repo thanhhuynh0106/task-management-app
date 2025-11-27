@@ -1,5 +1,5 @@
-import apiClient from './api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from "./api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const authService = {
   /**
@@ -9,13 +9,13 @@ const authService = {
    */
   register: async (userData) => {
     try {
-      const response = await apiClient.post('/auth/register', userData);
-      
+      const response = await apiClient.post("/auth/register", userData);
+
       if (response.token) {
-        await AsyncStorage.setItem('authToken', response.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        await AsyncStorage.setItem("authToken", response.token);
+        await AsyncStorage.setItem("user", JSON.stringify(response.user));
       }
-      
+
       return response;
     } catch (error) {
       throw error;
@@ -30,13 +30,13 @@ const authService = {
    */
   login: async (email, password) => {
     try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      
+      const response = await apiClient.post("/auth/login", { email, password });
+
       if (response.token) {
-        await AsyncStorage.setItem('authToken', response.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        await AsyncStorage.setItem("authToken", response.token);
+        await AsyncStorage.setItem("user", JSON.stringify(response.user));
       }
-      
+
       return response;
     } catch (error) {
       throw error;
@@ -48,10 +48,10 @@ const authService = {
    */
   logout: async () => {
     try {
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.removeItem("user");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   },
 
@@ -61,12 +61,12 @@ const authService = {
    */
   getCurrentUser: async () => {
     try {
-      const response = await apiClient.get('/auth/me');
-      
+      const response = await apiClient.get("/auth/me");
+
       if (response.data) {
-        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+        await AsyncStorage.setItem("user", JSON.stringify(response.data));
       }
-      
+
       return response;
     } catch (error) {
       throw error;
@@ -79,10 +79,10 @@ const authService = {
    */
   getStoredUser: async () => {
     try {
-      const userJson = await AsyncStorage.getItem('user');
+      const userJson = await AsyncStorage.getItem("user");
       return userJson ? JSON.parse(userJson) : null;
     } catch (error) {
-      console.error('Error getting stored user:', error);
+      console.error("Error getting stored user:", error);
       return null;
     }
   },
@@ -93,7 +93,7 @@ const authService = {
    */
   isAuthenticated: async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       return !!token;
     } catch (error) {
       return false;
@@ -106,15 +106,47 @@ const authService = {
    */
   getToken: async () => {
     try {
-      return await AsyncStorage.getItem('authToken');
+      return await AsyncStorage.getItem("authToken");
     } catch (error) {
       return null;
+    }
+  },
+
+  /**
+   *  Update user profile
+   * @param {Object} data - {fullName, department, position, phone, avatar}
+   * @returns {Promise}
+   */
+  updateProfile: async (data) => {
+    try {
+      const response = await apiClient.put("/auth/profile", data);
+      if (response.data) {
+        await AsyncStorage.setItem("user", JSON.stringify(response.data));
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Change password
+   * @param {string} oldPassword
+   * @param {string} newPassword
+   * @returns {Promise}
+   */
+  changePassword: async (oldPassword, newPassword) => {
+    try {
+      const response = await apiClient.put("/auth/password", {
+        oldPassword,
+        newPassword,
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
     }
   },
 };
 
 export default authService;
-
-
-
-
