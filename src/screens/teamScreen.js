@@ -5,55 +5,16 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../styles/color";
 import HeaderPromo from "../components/headerPromo";
 import AppButton from "../components/appButton";
+import { TeamCard } from "../components/team";
 import { useTeamStore } from "../../store";
 import { useAuth } from "../contexts/authContext";
 import NoSchedules from "../../assets/icons/no_schedules.svg";
-import TeamIcon from "../../assets/icons/team_ac.svg";
-import UserIcon from "../../assets/icons/user.svg";
-
-const TeamCard = ({ team, onPress }) => {
-  const memberCount = team.memberIds?.length || 0;
-
-  return (
-    <TouchableOpacity style={styles.teamCard} onPress={onPress}>
-      <View style={styles.teamHeader}>
-        <View style={styles.teamIconContainer}>
-          <TeamIcon width={24} height={24} />
-        </View>
-        <View style={styles.teamInfo}>
-          <Text style={styles.teamName}>{team.name}</Text>
-          {team.description && (
-            <Text style={styles.teamDescription} numberOfLines={2}>
-              {team.description}
-            </Text>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.teamFooter}>
-        <View style={styles.memberCount}>
-          <UserIcon width={16} height={16} />
-          <Text style={styles.memberCountText}>
-            {memberCount} {memberCount === 1 ? "member" : "members"}
-          </Text>
-        </View>
-        {team.leaderId && (
-          <Text style={styles.leaderText}>
-            Lead: {team.leaderId.profile?.fullName || team.leaderId.email}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-};
 
 const TeamScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -74,11 +35,7 @@ const TeamScreen = ({ navigation }) => {
   }, [error]);
 
   const loadTeams = async () => {
-    try {
-      await fetchTeams();
-    } catch (error) {
-      console.error("Error loading teams:", error);
-    }
+    await fetchTeams();
   };
 
   const onRefresh = async () => {
@@ -203,66 +160,6 @@ const styles = StyleSheet.create({
   },
   teamsContainer: {
     gap: 12,
-  },
-  teamCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  teamHeader: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  teamIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: Colors.primary + "20",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  teamInfo: {
-    flex: 1,
-  },
-  teamName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000000",
-    marginBottom: 4,
-  },
-  teamDescription: {
-    fontSize: 13,
-    color: "#666666",
-    lineHeight: 18,
-  },
-  teamFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-  },
-  memberCount: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  memberCountText: {
-    fontSize: 13,
-    color: "#666666",
-    fontWeight: "500",
-  },
-  leaderText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: "500",
   },
   loadingContainer: {
     padding: 40,

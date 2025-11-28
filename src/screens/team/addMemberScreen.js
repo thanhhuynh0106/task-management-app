@@ -5,64 +5,15 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  TouchableOpacity,
-  TextInput,
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import HeaderWithBackButton from "../../components/headerWithBackButton"; 
-import Avatar from "../../components/avatar"; 
-import AppButton from "../../components/appButton"; 
-import Colors from "../../styles/color"; 
-import { useTeamStore } from "../../../store"; 
-import { useUserStore } from "../../../store"; 
-import SearchIcon from "../../../assets/icons/search.svg"; 
-
-const UserCard = React.memo(
-  ({ user, isSelected, onToggle, isAlreadyMember }) => {
-    return (
-      <TouchableOpacity
-        style={[
-          styles.userCard,
-          isSelected && styles.userCardSelected,
-          isAlreadyMember && styles.userCardDisabled,
-        ]}
-        onPress={() => !isAlreadyMember && onToggle(user)}
-        disabled={isAlreadyMember}
-      >
-        <View style={styles.userLeft}>
-          <Avatar
-            name={user.profile?.fullName || user.email}
-            width={48}
-            height={48}
-          />
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>
-              {user.profile?.fullName || user.email}
-            </Text>
-            <Text style={styles.userPosition}>
-              {user.profile?.position || "Employee"} •{" "}
-              {user.profile?.department || "No Department"}
-            </Text>
-            {isAlreadyMember && (
-              <View style={styles.memberBadge}>
-                <Text style={styles.memberBadgeText}>Already a member</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {!isAlreadyMember && (
-          <View
-            style={[styles.checkbox, isSelected && styles.checkboxSelected]}
-          >
-            {isSelected && <View style={styles.checkboxInner} />}
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  }
-);
+import HeaderWithBackButton from "../../components/headerWithBackButton";
+import AppButton from "../../components/appButton";
+import Colors from "../../styles/color";
+import { useTeamStore } from "../../../store";
+import { useUserStore } from "../../../store";
+import { UserCard, SearchBar } from "../../components/team";
 
 const AddMemberScreen = ({ navigation, route }) => {
   const { teamId } = route.params;
@@ -97,7 +48,6 @@ const AddMemberScreen = ({ navigation, route }) => {
         fetchUsers({ page: 1, limit: 10, search: "" }),
       ]);
     } catch (error) {
-      console.error("Error loading data:", error);
       Alert.alert("Error", "Failed to load data");
     } finally {
       setIsInitializing(false);
@@ -127,7 +77,7 @@ const AddMemberScreen = ({ navigation, route }) => {
           limit: 10,
         },
         true
-      ); 
+      );
     }
   };
 
@@ -170,7 +120,6 @@ const AddMemberScreen = ({ navigation, route }) => {
           successCount++;
         } catch (error) {
           failCount++;
-          console.error(`Failed to add ${user.email}:`, error);
         }
       }
 
@@ -219,7 +168,7 @@ const AddMemberScreen = ({ navigation, route }) => {
       />
     ),
     [selectedUsers, currentTeam]
-  ); 
+  );
 
   if (isInitializing) {
     return (
@@ -245,28 +194,12 @@ const AddMemberScreen = ({ navigation, route }) => {
 
       <View style={styles.content}>
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <SearchIcon width={20} height={20} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name, email, position..."
-              placeholderTextColor="#999999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={handleClearSearch}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by name, email, position..."
+          onClear={handleClearSearch}
+        />
 
         {/* Selected Count */}
         {selectedUsers.length > 0 && (
@@ -296,7 +229,7 @@ const AddMemberScreen = ({ navigation, route }) => {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
               onEndReached={handleLoadMore}
-              onEndReachedThreshold={0.5} 
+              onEndReachedThreshold={0.5}
               ListFooterComponent={renderFooter}
               initialNumToRender={10}
               maxToRenderPerBatch={10}
@@ -344,39 +277,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.secondary,
   },
-  searchContainer: {
-    padding: 16,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E8E8E8",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.secondary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: 12,
-    tintColor: "#666666",
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#000000",
-  },
-  clearButton: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  clearButtonText: {
-    fontSize: 18,
-    color: "#666666",
-  },
   selectedCountContainer: {
     backgroundColor: Colors.primary + "20",
     paddingVertical: 8,
@@ -395,7 +295,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 20,
-    gap: 12, // Dùng gap thay cho marginBottom ở Item để khoảng cách đều
+    gap: 12,
   },
   centerLoading: {
     ...StyleSheet.absoluteFillObject,
@@ -431,75 +331,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666666",
     textAlign: "center",
-  },
-  userCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-    marginBottom: 12, // Dự phòng nếu gap không chạy trên máy cũ
-  },
-  userCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + "10",
-  },
-  userCardDisabled: {
-    opacity: 0.5,
-  },
-  userLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  userInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  userName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#000000",
-    marginBottom: 2,
-  },
-  userPosition: {
-    fontSize: 13,
-    color: "#666666",
-  },
-  memberBadge: {
-    backgroundColor: "#FFD700" + "40",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-    marginTop: 4,
-  },
-  memberBadgeText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#B8860B",
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#CCCCCC",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  checkboxInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#FFFFFF",
   },
   buttonContainer: {
     backgroundColor: Colors.white,
