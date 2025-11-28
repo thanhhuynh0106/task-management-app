@@ -1,5 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import React from "react";
+import { default as React } from "react";
 import CalendarAc from "../../assets/icons/calendar_ac.svg";
 import CalendarInac from "../../assets/icons/calendar_inac.svg";
 import HomeAc from "../../assets/icons/home_ac.svg";
@@ -11,10 +11,10 @@ import TaskInac from "../../assets/icons/task_inac.svg";
 import TeamAc from "../../assets/icons/team_ac.svg";
 import TeamInac from "../../assets/icons/team_inac.svg";
 import ClockinScreen from "../screens/clockinScreen";
-import CreateTaskScreen from "../screens/createTaskScreen";
 import HomeScreen from "../screens/homeScreen";
 import LeaveScreen from "../screens/leaveScreen";
 import TaskNavigator from "./taskNavigator";
+import TeamStackNavigator from "./teamStackNavigator";
 
 const Bottom = createBottomTabNavigator();
 
@@ -71,13 +71,16 @@ const BottomNavigator = () => {
                 })}
             />
             <Bottom.Screen
-                name="team"
-                component={CreateTaskScreen}
-                options={{
-                    tabBarIcon: ({ focused}) => (
-                        focused ? <TeamAc width={28} height={28} /> : <TeamInac width={28} height={28} />
-                    )
-                }}
+              name="team"
+              component={TeamStackNavigator}
+              options={{
+                tabBarIcon: ({ focused }) =>
+                  focused ? (
+                    <TeamAc width={28} height={28} />
+                  ) : (
+                    <TeamInac width={28} height={28} />
+                  ),
+              }}
             />
             <Bottom.Screen
                 name="leave"
@@ -91,6 +94,5 @@ const BottomNavigator = () => {
         </Bottom.Navigator>
     )
 }
-
 
 export default BottomNavigator;

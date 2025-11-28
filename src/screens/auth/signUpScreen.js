@@ -14,11 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Yup from "yup";
+
+import UserIcon from "../../../assets/icons/user.svg";
 import CompanyIcon from "../../../assets/icons/company.svg";
 import EmailIcon from "../../../assets/icons/email.svg";
 import EyeOffIcon from "../../../assets/icons/eye-off.svg";
 import EyeIcon from "../../../assets/icons/eye.svg";
 import PasswordIcon from "../../../assets/icons/password.svg";
+
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
 import CheckboxField from "../../components/auth/checkboxField";
@@ -26,20 +29,22 @@ import InputField from "../../components/auth/inputField";
 import PhoneInputField from "../../components/auth/phoneInputField";
 import { useAuth } from "../../contexts/authContext";
 import Colors from "../../styles/color";
+import LoadingSpinner from "../../components/loadingSpinner";
 
 const SignUpScreen = ({ navigation }) => {
   const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   const validationSchema = Yup.object({
-    email: Yup.string()
-      .email("Email is invalid")
-      .required("Email is required"),
-    phone: Yup.string()
-      .required("Phone number is required")
-      .matches(/^[0-9]+$/, "Phone number is invalid"),
-    companyId: Yup.string().required("Company ID is required"),
+    fullName: Yup.string()
+      .required("Full name is required")
+      .min(2, "Name must be at least 2 characters"),
+    email: Yup.string().email("Email is invalid").required("Email is required"),
+    // phone: Yup.string()
+    //   .required("Phone number is required")
+    //   .matches(/^[0-9]+$/, "Phone number is invalid"),
+    employeeId: Yup.string().required("Employee ID is required"),
     password: Yup.string()
       .min(6, "Password must be at least 6 characters")
       .required("Password is required"),
@@ -59,9 +64,10 @@ const SignUpScreen = ({ navigation }) => {
   } = useForm({
     resolver: yupResolver(validationSchema),
     defaultValues: {
+      fullName: "",
       email: "",
       phone: "",
-      companyId: "",
+      employeeId: "",
       password: "",
       confirmPassword: "",
       agreeTerms: false,
@@ -69,28 +75,46 @@ const SignUpScreen = ({ navigation }) => {
   });
 
   const onSubmit = async (data) => {
-    const { email, phone, companyId, password } = data;
-    const userData = {
-      email: email.trim(),
-      password: password.trim(),
-      profile: {
-        fullName: email.split("@")[0], // add field fullname later
-        employeeId: companyId.trim(), // check this later
-        department: null, // add field department later
-        position: null
+    const { email, employeeId, password, fullName } = data;
+
+    setIsLoading(true);
+    try {
+      const userData = {
+        email: email.trim(),
+        password: password.trim(),
+        profile: {
+          fullName: fullName.trim(),
+          employeeId: employeeId.trim(),
+        },
+      };
+
+      const result = await signUp(userData);
+
+      if (!result.success) {
+        Alert.alert("Error", result.error || "Failed to sign up.");
+        return;
       }
-    }
-    const result = await signUp(userData);
-    if (!result.success) {
-      Alert.alert("Error", result.message || "Failed to sign up.");
-      return;
+
+      Alert.alert("Success", "Registration successful!");
+    } catch (error) {
+      Alert.alert("Error", error.message || "An error occurred.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const onInvalid = () => {
-    setFocus("email");
+    if (errors.fullName) setFocus("fullName");
+    else if (errors.email) setFocus("email");
   };
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LoadingSpinner text="Creating your account..." />
+      </View>
+    );
+  }
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -112,6 +136,18 @@ const SignUpScreen = ({ navigation }) => {
           bounces={Platform.OS === "ios"}
           nestedScrollEnabled={true}
         >
+          {/* --- THÊM Ô INPUT FULL NAME --- */}
+          <InputField
+            name="fullName"
+            // Nếu chưa có UserIcon, tạm thời dùng EmailIcon hoặc CompanyIcon
+            icon={UserIcon || CompanyIcon}
+            label="Full Name"
+            placeholder="Lionel Messi"
+            control={control}
+            error={errors.fullName}
+            autoCapitalize="words" // Tự động viết hoa chữ cái đầu
+          />
+
           <InputField
             name="email"
             icon={EmailIcon}
@@ -121,22 +157,21 @@ const SignUpScreen = ({ navigation }) => {
             error={errors.email}
             keyboardType="email-address"
           />
-
+          {/* 
           <PhoneInputField
             name="phone"
             label="Phone Number"
             control={control}
             error={errors.phone}
-          />
+          /> */}
 
           <InputField
-            name="companyId"
+            name="employeeId"
             icon={CompanyIcon}
-            label="Company ID"
-            placeholder="1015015"
+            label="Employee ID"
+            placeholder="E12345"
             control={control}
-            error={errors.companyId}
-            keyboardType="numeric"
+            error={errors.employeeId}
           />
 
           <InputField
@@ -258,6 +293,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.gray,
   },
 });
 

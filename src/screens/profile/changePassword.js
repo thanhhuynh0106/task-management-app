@@ -1,14 +1,17 @@
 // File: changePassword.js (Updated with proper state management and mock data)
-import { useNavigation } from '@react-navigation/native'; // Import navigation hook
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import AppButton from '../../components/appButton';
-import HeaderWithBackButton from '../../components/headerWithBackButton';
+import { useNavigation } from "@react-navigation/native"; // Import navigation hook
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import AppButton from "../../components/appButton";
+import HeaderWithBackButton from "../../components/headerWithBackButton";
 import Colors from "../../styles/color";
+import { useAuth } from "@/src/contexts/authContext";
 // Import icons (assuming paths based on previous patterns)
 import EyeOff from "../../../assets/icons/eye-slash.svg";
 import Lock from "../../../assets/icons/finger-scan.svg";
 import Eye from "../../../assets/icons/Property 1=linear.svg";
+import { Alert } from "react-native";
+import LoadingSpinner from "@/src/components/loadingSpinner";
 
 // Reusable PasswordInput component for the three similar inputs
 const PasswordInput = ({ label, placeholder, value, onChangeText }) => {
@@ -27,8 +30,8 @@ const PasswordInput = ({ label, placeholder, value, onChangeText }) => {
           value={value}
           onChangeText={onChangeText}
         />
-        <Pressable 
-          onPress={() => setShowPassword(!showPassword)} 
+        <Pressable
+          onPress={() => setShowPassword(!showPassword)}
           style={passwordStyles.eyeButton}
         >
           {showPassword ? (
@@ -48,14 +51,14 @@ const passwordStyles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 6,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F0FF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F0FF",
     borderRadius: 25,
     paddingHorizontal: 16,
     height: 50,
@@ -67,7 +70,7 @@ const passwordStyles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    color: '#000',
+    color: "#000",
   },
   eyeButton: {
     padding: 10,
@@ -75,68 +78,129 @@ const passwordStyles = StyleSheet.create({
 });
 
 const ChangePassword = () => {
+  const navigation = useNavigation();
+  const { changePassword } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   // Mockup data and state management
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
   });
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleUpdate = () => {
-    // Mock update logic (e.g., validate and log)
-    if (formData.newPassword !== formData.confirmNewPassword) {
-      console.log('Passwords do not match');
+  const handleUpdate = async () => {
+    // Validation
+    if (
+      !formData.currentPassword ||
+      !formData.newPassword ||
+      !formData.confirmNewPassword
+    ) {
+      Alert.alert("Validation Error", "All fields are required");
       return;
     }
-    console.log('Password updated:', formData);
-  };
 
-  const navigation = useNavigation();
+    if (formData.newPassword.length < 6) {
+      Alert.alert(
+        "Validation Error",
+        "New password must be at least 6 characters"
+      );
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmNewPassword) {
+      Alert.alert("Validation Error", "New passwords do not match");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      setIsSubmitting(true);
+      const response = await changePassword(
+        formData.currentPassword,
+        formData.newPassword
+      );
+
+      if (response.success) {
+        setFormData({
+          currentPassword: "",
+          newPassword: "",
+          confirmNewPassword: "",
+        });
+        Alert.alert("Success", "Password changed successfully", [
+          {
+            text: "OK",
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          response.error || "Failed to change password. Please try again."
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error?.error || "Failed to change password. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LoadingSpinner text="Updating password..." />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <HeaderWithBackButton 
-        title="Personal Data" 
+      <HeaderWithBackButton
+        title="Personal Data"
         onBackPress={() => navigation.goBack()} // Added goBack navigation
       />
-      
+
       <View style={styles.formContainer}>
         <Text style={styles.formTitle}>Change Password Form</Text>
-        <Text style={styles.formSubtitle}>Fill information to change your password</Text>
-        
-        <PasswordInput 
-          label="Current Password" 
-          placeholder="My Password" 
+        <Text style={styles.formSubtitle}>
+          Fill information to change your password
+        </Text>
+
+        <PasswordInput
+          label="Current Password"
+          placeholder="My Password"
           value={formData.currentPassword}
-          onChangeText={(text) => handleChange('currentPassword', text)}
+          onChangeText={(text) => handleChange("currentPassword", text)}
         />
-        <PasswordInput 
-          label="New Password" 
-          placeholder="My Password" 
+        <PasswordInput
+          label="New Password"
+          placeholder="My Password"
           value={formData.newPassword}
-          onChangeText={(text) => handleChange('newPassword', text)}
+          onChangeText={(text) => handleChange("newPassword", text)}
         />
-        <PasswordInput 
-          label="Confirm New Password" 
-          placeholder="My Password" 
+        <PasswordInput
+          label="Confirm New Password"
+          placeholder="My Password"
           value={formData.confirmNewPassword}
-          onChangeText={(text) => handleChange('confirmNewPassword', text)}
+          onChangeText={(text) => handleChange("confirmNewPassword", text)}
         />
       </View>
       <View style={styles.bottom}>
-        <AppButton 
-            text="Update Password" 
-            onPress={handleUpdate}
-            style={{
-                width: "95%",
-                height: 47,
-                marginTop: 16,
-              }}
-            textStyle={{ fontSize: 15 }}
-
+        <AppButton
+          text="Update Password"
+          onPress={handleUpdate}
+          style={{
+            width: "95%",
+            height: 47,
+            marginTop: 16,
+          }}
+          textStyle={{ fontSize: 15 }}
         />
       </View>
     </View>
@@ -161,26 +225,29 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
   },
   formSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 24,
   },
   updateButton: {
-    width: '90%',
+    width: "90%",
     height: 50,
     borderRadius: 25,
-    marginTop: 'auto',
+    marginTop: "auto",
     marginBottom: 20,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.gray,
+  },
 });

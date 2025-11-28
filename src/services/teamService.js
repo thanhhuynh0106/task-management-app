@@ -118,14 +118,14 @@ const teamService = {
     }
   },
 
-      /**
+  /**
    * Get members of a specific team
    * @param {string} teamId
    * @returns {Promise}
    */
   getTeamMembers: async (teamId) => {
     try {
-      const response = await apiClient.get(`/teams/${teamId}/members`);
+    const response = await apiClient.get(`/teams/${teamId}/members`);
       return response;
     } catch (error) {
       throw error;

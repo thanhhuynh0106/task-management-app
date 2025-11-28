@@ -1,267 +1,182 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { create } from 'zustand';
-import authService from '../src/services/authService';
+import { create } from "zustand";
+import userService from "../src/services/userService";
 
-const useAuthStore = create((set, get) => ({
-  // States
-  isAuthenticated: false,
-  user: null,
-  hasSeenOnboarding: false,
-  isLoading: true,
+/**
+ * User Store
+ * Manages user data and operations
+ */
+const useUserStore = create((set, get) => ({
+  users: [],
+  currentUser: null,
+  isLoading: false, 
+  isLoadingMore: false, 
   error: null,
-
-  /**
-   * Initialize auth state on app start
-   */
-  initialize: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const token = await authService.getToken();
-      const storedUser = await authService.getStoredUser();
-      const onboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-      
-      set({
-        isAuthenticated: !!token,
-        user: storedUser,
-        hasSeenOnboarding: onboarding === 'true',
-        isLoading: false
-      });
-
-      // Refresh user data from API if token exists
-      if (token) {
-        try {
-          const response = await authService.getCurrentUser();
-          set({ user: response.data });
-        } catch (error) {
-          console.log('Could not refresh user data:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing auth:', error);
-      set({ 
-        error: error?.error || 'Failed to initialize',
-        isLoading: false 
-      });
-    }
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
   },
 
   /**
-   * Sign in user
-   * @param {string} email
-   * @param {string} password
+   * Fetch all users
+   * @param {Object} params - {page, limit, search, role, department}
+   * @param {boolean} isLoadMore 
    */
-  signIn: async (email, password) => {
-    set({ isLoading: true, error: null });
+  fetchUsers: async (params = {}, isLoadMore = false) => {
+    if (isLoadMore) {
+      set({ isLoadingMore: true, error: null });
+    } else {
+      set({ isLoading: true, error: null });
+    }
+
     try {
-      const response = await authService.login(email, password);
-      
-      set({
-        isAuthenticated: true,
-        user: response.user,
+      const response = await userService.getAllUsers(params);
+
+      const newUsers = response.data || [];
+      const newPagination = response.pagination || get().pagination;
+
+      set((state) => ({
+        users: isLoadMore ? [...state.users, ...newUsers] : newUsers,
+        pagination: newPagination,
         isLoading: false,
-        error: null
-      });
+        isLoadingMore: false,
+      }));
 
-      return { success: true, user: response.user };
+      return response;
     } catch (error) {
-      console.error('Sign in error:', error);
-      const errorMessage = error?.error || 'Login failed. Please try again.';
-      
-      set({ 
-        error: errorMessage,
-        isLoading: false 
+      set({
+        error: error?.error || "Failed to fetch users",
+        isLoading: false,
+        isLoadingMore: false,
       });
-
-      return { success: false, error: errorMessage };
+      throw error;
     }
   },
 
   /**
-   * Sign up new user
-   * @param {Object} userData
+   * Get user by ID
    */
-  signUp: async (userData) => {
+  fetchUserById: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authService.register(userData);
-      
+      const response = await userService.getUserById(id);
       set({
-        isAuthenticated: true,
-        user: response.user,
+        currentUser: response.data,
         isLoading: false,
-        error: null
       });
-
-      return { success: true, user: response.user };
+      return response;
     } catch (error) {
-      console.error('Sign up error:', error);
-      const errorMessage = error?.error || 'Registration failed. Please try again.';
-      
-      set({ 
-        error: errorMessage,
-        isLoading: false 
+      set({
+        error: error?.error || "Failed to fetch user",
+        isLoading: false,
       });
-
-      return { success: false, error: errorMessage };
+      throw error;
     }
   },
 
   /**
-   * Sign out user
+   * Update user
    */
-  signOut: async () => {
+  updateUser: async (id, data) => {
     set({ isLoading: true, error: null });
     try {
-      await authService.logout();
-      
-      set({
-        isAuthenticated: false,
-        user: null,
+      const response = await userService.updateUser(id, data);
+      const updatedUser = response.data;
+
+      set((state) => ({
+        users: state.users.map((user) =>
+          user._id === id ? updatedUser : user
+        ),
+        currentUser:
+          state.currentUser?._id === id ? updatedUser : state.currentUser,
         isLoading: false,
-        error: null
-      });
+      }));
+
+      return response;
     } catch (error) {
-      console.error('Error signing out:', error);
-      set({ 
-        error: error?.error || 'Failed to sign out',
-        isLoading: false 
+      set({
+        error: error?.error || "Failed to update user",
+        isLoading: false,
       });
+      throw error;
     }
   },
 
   /**
-   * Refresh current user data
+   * Delete user
    */
-  refreshUser: async () => {
-    try {
-      const response = await authService.getCurrentUser();
-      
-      set({ user: response.data });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Update user profile
-   * @param {Object} profileData
-   */
-  updateProfile: async (profileData) => {
+  deleteUser: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authService.updateProfile(profileData);
-      
-      set({
-        user: response.data,
+      await userService.deleteUser(id);
+
+      set((state) => ({
+        users: state.users.filter((user) => user._id !== id),
+        currentUser: state.currentUser?._id === id ? null : state.currentUser,
         isLoading: false,
-        error: null
-      });
+      }));
 
-      return { success: true, user: response.data };
+      return true;
     } catch (error) {
-      console.error('Update profile error:', error);
-      const errorMessage = error?.error || 'Failed to update profile';
-      
-      set({ 
-        error: errorMessage,
-        isLoading: false 
+      set({
+        error: error?.error || "Failed to delete user",
+        isLoading: false,
       });
-
-      return { success: false, error: errorMessage };
+      throw error;
     }
   },
 
   /**
-   * Mark onboarding as completed
+   * Get users by team
    */
-  completeOnboarding: async () => {
+  fetchUsersByTeam: async (teamId) => {
+    set({ isLoading: true, error: null });
     try {
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      set({ hasSeenOnboarding: true });
+      const response = await userService.getUsersByTeam(teamId);
+      set({ isLoading: false });
+      return response;
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      set({
+        error: error?.error || "Failed to fetch team users",
+        isLoading: false,
+      });
+      throw error;
     }
   },
 
   /**
-   * Check if user has specific role
-   * @param {string} role - 'employee', 'team_lead', 'hr_manager'
+   * Set current user
    */
-  hasRole: (role) => {
-    const user = get().user;
-    return user?.role === role;
-  },
+  setCurrentUser: (user) => set({ currentUser: user }),
 
   /**
-   * Check if user can create/assign tasks (Team Lead or HR Manager)
+   * Clear current user
    */
-  canManageTasks: () => {
-    const user = get().user;
-    return user?.role === 'team_lead' || user?.role === 'hr_manager';
-  },
-
-  /**
-   * Check if user can approve leaves (Team Lead or HR Manager)
-   */
-  canApproveLeaves: () => {
-    const user = get().user;
-    return user?.role === 'team_lead' || user?.role === 'hr_manager';
-  },
-
-  /**
-   * Check if user is HR Manager
-   */
-  isHRManager: () => {
-    const user = get().user;
-    return user?.role === 'hr_manager';
-  },
-
-  /**
-   * Check if user is Team Lead
-   */
-  isTeamLead: () => {
-    const user = get().user;
-    return user?.role === 'team_lead';
-  },
-
-  /**
-   * Check if user is Employee
-   */
-  isEmployee: () => {
-    const user = get().user;
-    return user?.role === 'employee';
-  },
-
-  /**
-   * Get user's team ID
-   */
-  getTeamId: () => {
-    const user = get().user;
-    return user?.teamId;
-  },
+  clearCurrentUser: () => set({ currentUser: null }),
 
   /**
    * Clear error
    */
-  clearError: () => {
-    set({ error: null });
-  },
+  clearError: () => set({ error: null }),
 
   /**
    * Reset store
    */
-  reset: () => {
+  reset: () =>
     set({
-      isAuthenticated: false,
-      user: null,
-      hasSeenOnboarding: false,
+      users: [],
+      currentUser: null,
       isLoading: false,
-      error: null
-    });
-  }
+      isLoadingMore: false,
+      error: null,
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        pages: 0,
+      },
+    }),
 }));
 
-export default useAuthStore;
+export default useUserStore;

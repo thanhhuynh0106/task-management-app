@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };
@@ -27,11 +27,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = await authService.getToken();
       const storedUser = await authService.getStoredUser();
-      const onboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-      
+      const onboarding = await AsyncStorage.getItem("hasSeenOnboarding");
+
       setIsAuthenticated(!!token);
       setUser(storedUser);
-      setHasSeenOnboarding(onboarding === 'true');
+      setHasSeenOnboarding(onboarding === "true");
 
       // Refresh user data from API if token exists
       if (token && storedUser) {
@@ -44,11 +44,11 @@ export const AuthProvider = ({ children }) => {
           } else {
           }
         } catch (error) {
-          console.log('❌ Could not refresh user data:', error);
+          console.log("Could not refresh user data");
         }
       }
     } catch (error) {
-      console.error('❌ Error checking auth state:', error);
+      console.error("Error checking auth state:", error);
     } finally {
 
       setIsLoading(false);
@@ -60,28 +60,13 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       
       const response = await authService.login(email, password);
-      
-      // authService.login returns { success, token, user }
-      if (response?.token && response?.user) {
-
-        
-        setIsAuthenticated(true);
-        setUser(response.user);
-        
-        return { 
-          success: true, 
-          user: response.user 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: response?.error || response?.message || 'Login failed' 
-      };
+      setIsAuthenticated(true);
+      setUser(response.user);
+      return { success: true, user: response.user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error?.error || error?.message || 'Login failed. Please try again.' 
+      return {
+        success: false,
+        error: error.error || "Login failed. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -93,28 +78,14 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       
       const response = await authService.register(userData);
-      
-      // authService.register returns { success, token, user }
-      if (response?.token && response?.user) {
-
-        
-        setIsAuthenticated(true);
-        setUser(response.user);
-        
-        return { 
-          success: true, 
-          user: response.user 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: response?.error || response?.message || 'Registration failed' 
-      };
+      setIsAuthenticated(true);
+      setUser(response.user);
+      return { success: true, user: response.user };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error?.error || error?.message || 'Registration failed. Please try again.' 
+      console.error("Sign up error:", error);
+      return {
+        success: false,
+        error: error.error || "Registration failed. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -127,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
 
@@ -142,16 +114,17 @@ export const AuthProvider = ({ children }) => {
       
       return null;
     } catch (error) {
+      console.error("Error refreshing user:", error);
       return null;
     }
   };
 
   const completeOnboarding = async () => {
     try {
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      await AsyncStorage.setItem("hasSeenOnboarding", "true");
       setHasSeenOnboarding(true);
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error("Error completing onboarding:", error);
     }
   };
 
@@ -196,6 +169,46 @@ export const AuthProvider = ({ children }) => {
       });
     }
   }, [isAuthenticated, user, isLoading]);
+  /**
+   * Update user profile
+   * @param {Object} data - {fullName, department, position, phone, avatar}
+   */
+  const updateProfile = async (data) => {
+    try {
+      setIsLoading(true);
+      const response = await authService.updateProfile(data);
+      setUser(response.data);
+      return { success: true, user: response.data };
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return {
+        success: false,
+        error: error.error || "Failed to update profile",
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Change password
+   * @param {string} oldPassword
+   * @param {string} newPassword
+   */
+ const changePassword = async (oldPassword, newPassword) => {
+   try {
+     const response = await authService.changePassword(
+       oldPassword,
+       newPassword
+     );
+     return { success: true, message: response.message };
+   } catch (error) {
+     return {
+       success: false,
+       error: error?.error || "Failed to change password",
+     };
+   }
+ };
 
   return (
     <AuthContext.Provider
@@ -214,6 +227,8 @@ export const AuthProvider = ({ children }) => {
         isHRManager,
         isTeamLead,
         isEmployee,
+        updateProfile,
+        changePassword,
       }}
     >
       {children}
