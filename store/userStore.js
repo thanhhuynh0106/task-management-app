@@ -8,7 +8,8 @@ import userService from "../src/services/userService";
 const useUserStore = create((set, get) => ({
   users: [],
   currentUser: null,
-  isLoading: false,
+  isLoading: false, 
+  isLoadingMore: false, 
   error: null,
   pagination: {
     page: 1,
@@ -20,23 +21,34 @@ const useUserStore = create((set, get) => ({
   /**
    * Fetch all users
    * @param {Object} params - {page, limit, search, role, department}
+   * @param {boolean} isLoadMore 
    */
-  fetchUsers: async (params = {}) => {
-    set({ isLoading: true, error: null });
+  fetchUsers: async (params = {}, isLoadMore = false) => {
+    if (isLoadMore) {
+      set({ isLoadingMore: true, error: null });
+    } else {
+      set({ isLoading: true, error: null });
+    }
+
     try {
       const response = await userService.getAllUsers(params);
 
-      set({
-        users: response.data || [],
-        pagination: response.pagination || get().pagination,
+      const newUsers = response.data || [];
+      const newPagination = response.pagination || get().pagination;
+
+      set((state) => ({
+        users: isLoadMore ? [...state.users, ...newUsers] : newUsers,
+        pagination: newPagination,
         isLoading: false,
-      });
+        isLoadingMore: false,
+      }));
 
       return response;
     } catch (error) {
       set({
         error: error?.error || "Failed to fetch users",
         isLoading: false,
+        isLoadingMore: false,
       });
       throw error;
     }
@@ -44,18 +56,15 @@ const useUserStore = create((set, get) => ({
 
   /**
    * Get user by ID
-   * @param {string} id
    */
   fetchUserById: async (id) => {
     set({ isLoading: true, error: null });
     try {
       const response = await userService.getUserById(id);
-
       set({
         currentUser: response.data,
         isLoading: false,
       });
-
       return response;
     } catch (error) {
       set({
@@ -68,8 +77,6 @@ const useUserStore = create((set, get) => ({
 
   /**
    * Update user
-   * @param {string} id
-   * @param {Object} data
    */
   updateUser: async (id, data) => {
     set({ isLoading: true, error: null });
@@ -98,7 +105,6 @@ const useUserStore = create((set, get) => ({
 
   /**
    * Delete user
-   * @param {string} id
    */
   deleteUser: async (id) => {
     set({ isLoading: true, error: null });
@@ -123,7 +129,6 @@ const useUserStore = create((set, get) => ({
 
   /**
    * Get users by team
-   * @param {string} teamId
    */
   fetchUsersByTeam: async (teamId) => {
     set({ isLoading: true, error: null });
@@ -138,30 +143,6 @@ const useUserStore = create((set, get) => ({
       });
       throw error;
     }
-  },
-
-  /**
-   * Search users
-   * @param {string} searchTerm
-   */
-  searchUsers: async (searchTerm) => {
-    return await get().fetchUsers({ search: searchTerm });
-  },
-
-  /**
-   * Filter users by role
-   * @param {string} role
-   */
-  filterByRole: async (role) => {
-    return await get().fetchUsers({ role });
-  },
-
-  /**
-   * Filter users by department
-   * @param {string} department
-   */
-  filterByDepartment: async (department) => {
-    return await get().fetchUsers({ department });
   },
 
   /**
@@ -187,6 +168,7 @@ const useUserStore = create((set, get) => ({
       users: [],
       currentUser: null,
       isLoading: false,
+      isLoadingMore: false,
       error: null,
       pagination: {
         page: 1,
