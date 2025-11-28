@@ -140,21 +140,20 @@ export const AuthProvider = ({ children }) => {
    * @param {string} oldPassword
    * @param {string} newPassword
    */
-  const changePassword = async (oldPassword, newPassword) => {
-    try {
-      setIsLoading(true);
-      await authService.changePassword(oldPassword, newPassword);
-      return { success: true, message: "Password changed successfully" };
-    } catch (error) {
-      console.error("Change password error:", error);
-      return {
-        success: false,
-        error: error.error || "Failed to change password",
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ const changePassword = async (oldPassword, newPassword) => {
+   try {
+     const response = await authService.changePassword(
+       oldPassword,
+       newPassword
+     );
+     return { success: true, message: response.message };
+   } catch (error) {
+     return {
+       success: false,
+       error: error?.error || "Failed to change password",
+     };
+   }
+ };
 
   return (
     <AuthContext.Provider

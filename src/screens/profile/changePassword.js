@@ -134,8 +134,12 @@ const ChangePassword = () => {
           {
             text: "OK",
           },
-          
         ]);
+      } else {
+        Alert.alert(
+          "Error",
+          response.error || "Failed to change password. Please try again."
+        );
       }
     } catch (error) {
       Alert.alert(
