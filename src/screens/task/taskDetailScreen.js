@@ -20,16 +20,19 @@ import EditIcon from "../../../assets/icons/edit.svg";
 import TrashIcon from "../../../assets/icons/trash.svg";
 import { CategoryMap, DefaultCategory } from "../../utils/categoryMapping";
 
+import { useState } from "react"; // Thêm useState nếu chưa có
 import useTaskStore from "../../../store/taskStore";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import AddComment from "../../components/task/addComment";
 import CommentList from "../../components/task/commentList";
 import Colors from "../../styles/color";
+import { downloadFile } from "../../utils/downloadHelper";
 
 const TaskDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { taskId } = route.params;
+  const [downloadingFileId, setDownloadingFileId] = useState(null);
 
   const { user, canManageTasks } = useAuth();
   const {
@@ -67,8 +70,21 @@ const TaskDetailScreen = () => {
     ]);
   };
 
-  const handleDownload = async (url, filename) => {
-   
+  const handleDownload = async (url, filename, fileId) => {
+    try {
+      // Set loading state cho file đang tải
+      setDownloadingFileId(fileId);
+      
+      // Gọi helper function
+      await downloadFile(url, filename);
+      
+      // Clear loading state
+      setDownloadingFileId(null);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setDownloadingFileId(null);
+      Alert.alert('Error', 'Failed to download file. Please try again.');
+    }
   };
 
   const openImageViewer = (images, startIndex = 0) => {
@@ -94,6 +110,39 @@ const TaskDetailScreen = () => {
     return map[status] || map.todo;
   };
 
+  const formatDeadline = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = date - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+    const formatted = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  
+    let color = "#34C759"; // xanh
+    let label = formatted;
+  
+    if (diffDays < 0) {
+      color = "#FF3B30";
+      label = `Overdue (${formatted})`;
+    } else if (diffDays === 0) {
+      color = "#FF9500";
+      label = `Today (${formatted})`;
+    } else if (diffDays === 1) {
+      color = "#FF9500";
+      label = `Tomorrow (${formatted})`;
+    } else if (diffDays <= 3) {
+      color = "#FF9500";
+      label = `${diffDays} days left`;
+    }
+  
+    return { label, color };
+  };
+
   if (isLoading || !selectedTask) {
     return (
       <View style={styles.loading}>
@@ -106,6 +155,7 @@ const TaskDetailScreen = () => {
   const statusKey = selectedTask.status === "in_progress" ? "inprogress" : selectedTask.status;
   const StatusIcon = CategoryMap[statusKey] || DefaultCategory;
   const statusConfig = getStatusConfig(selectedTask.status);
+
 
   // Lọc ảnh và file
   const imageAttachments = selectedTask.attachments?.filter((att) =>
@@ -223,14 +273,14 @@ const TaskDetailScreen = () => {
         {fileAttachments.length > 0 && (
           <View style={styles.section}>
             {fileAttachments.map((file, idx) => {
-              const filename = file.url.split("/").pop().split("?")[0];
+              const filename = file.name || file.url.split("/").pop().split("?")[0];
               const sizeMB = file.size ? (file.size / 1024 / 1024).toFixed(2) + " MB" : null;
-
+              
               return (
                 <TouchableOpacity
                   key={file._id || idx}
                   style={styles.fileItem}
-                  onPress={() => handleDownload(file.url, filename)}
+                  onPress={() => handleDownload(file.url, filename, file._id)}
                 >
                   <DownloadIcon width={28} height={28} fill={Colors.primary} />
                   <View style={{ flex: 1, marginLeft: 14 }}>
@@ -252,7 +302,7 @@ const TaskDetailScreen = () => {
           </Text>
         </View>
 
-        {/* Priority & Difficulty */}
+        {/* Priority, Difficulty & Deadline */}
         <View style={styles.infoRow}>
           <View style={styles.infoCard}>
             <Text style={styles.infoLabel}>Priority</Text>
@@ -264,7 +314,9 @@ const TaskDetailScreen = () => {
                   selectedTask.priority === "medium" ? "#FF9500" : "#34C759"
               }
             ]}>
-              <Text style={styles.badgeText}>{(selectedTask.priority || "low").toUpperCase()}</Text>
+              <Text style={styles.badgeText}>
+                {selectedTask.priority?.charAt(0).toUpperCase() + selectedTask.priority?.slice(1) || "Medium"}
+              </Text>
             </View>
           </View>
 
@@ -274,6 +326,21 @@ const TaskDetailScreen = () => {
               <Text style={styles.badgeText}>Very Easy (Less Than a Day)</Text>
             </View>
           </View>
+
+          {/* DEADLINE MỚI – SIÊU ĐẸP */}
+          {selectedTask.dueDate && (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>Deadline</Text>
+              {(() => {
+                const deadline = formatDeadline(selectedTask.dueDate);
+                return deadline ? (
+                  <View style={[styles.deadlineBadge, { backgroundColor: deadline.color }]}>
+                    <Text style={styles.badgeText}>{deadline.label}</Text>
+                  </View>
+                ) : null;
+              })()}
+            </View>
+          )}
         </View>
 
         {/* Assignee */}
@@ -340,8 +407,6 @@ const TaskDetailScreen = () => {
           <CommentList comments={selectedTask.comments || []} />
           <AddComment taskId={taskId} />
         </View>
-
-        <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -518,6 +583,14 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   badgeText: { color: "#FFF", fontSize: 13, fontWeight: "600" },
+
+  // ==== Deadline ===
+  deadlineBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
 
   // ===== Assignee =====
   assigneeItem: { flexDirection: "row", alignItems: "center", marginBottom: 16 },

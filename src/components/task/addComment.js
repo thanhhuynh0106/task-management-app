@@ -2,13 +2,13 @@
 import { useAuth } from "@/src/contexts/authContext";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import SendIcon from "../../../assets/icons/send.svg";
 import useTaskStore from "../../../store/taskStore";

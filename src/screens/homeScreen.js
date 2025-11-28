@@ -4,8 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotificationStore, useTaskStore } from "../../store/index";
-import Schedules from "../components/home/schedules";
-import TaskCard from "../components/home/taskCard";
+import TodayFocusCard from '../components/home/todayFocusCard';
 import UserHeader from "../components/home/userHeader";
 import WelcomeCard from "../components/home/welcomeCard";
 import Colors from "../styles/color";
@@ -41,7 +40,7 @@ const HomeScreen = ({ navigation }) => {
     
     try {
       await Promise.all([
-        fetchMyTasks({ page: 1, limit: 10, status: 'in_progress,pending' }),
+        fetchMyTasks({ page: 1, limit: 10, status: 'in_progress' }),
         fetchTaskStats(),
         fetchUnreadCount(),
         fetchNotifications({ page: 1, limit: 5 }),
@@ -98,8 +97,7 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <WelcomeCard />
-        <Schedules navigation={navigation} />
-        <TaskCard navigation={navigation} />
+        <TodayFocusCard navigation={navigation} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -8,7 +8,7 @@ import CardMeeting from "../cardMeeting";
 
 
 const Schedules = ({navigation}) => {
-  const { myTasks } = useTaskStore(); // Lấy task thật
+  const { myTasks } = useTaskStore(); // Lấy tasks từ store
   const schedules = myTasks.slice(0, 3); // Hiển thị tối đa 3
 
   return (
@@ -37,7 +37,7 @@ const Schedules = ({navigation}) => {
                   color: "#555555ff",
                 }}
               >
-                It looks like you don't have any schedule right now. This place
+                It looks like you don&apos;t have any schedule right now. This place
                 will be updated as new schedules are added!!!
               </Text>
             </View>

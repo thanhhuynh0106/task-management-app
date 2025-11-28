@@ -58,7 +58,17 @@ const BottomNavigator = () => {
                     tabBarIcon: ({ focused }) => (
                         focused ? <TaskAc width={28} height={28} /> : <TaskInac width={28} height={28} />
                     )
+                   
                 }}
+                listeners={({ navigation }) => ({
+                    tabPress: (e) => {
+                      e.preventDefault();
+                
+                      navigation.navigate('task', {
+                        screen: 'TaskScreen',
+                      });
+                    },
+                })}
             />
             <Bottom.Screen
                 name="team"

@@ -127,7 +127,7 @@ const TaskScreen = () => {
       progress: task.progress || 0,
       category: task.status,
       flag: task.priority || "medium",
-      assignees: task.assignedTo || []
+      assignees: task.assignedTo || [],
     };
   };
 

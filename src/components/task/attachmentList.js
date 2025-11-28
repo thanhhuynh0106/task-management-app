@@ -1,17 +1,17 @@
 // components/task/attachmentList.js
 import React, { useRef, useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Image,
-    Linking,
-    Modal,
-    PanResponder,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  Image,
+  Linking,
+  Modal,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import ImageIcon from "../../../assets/icons/sms.svg";
 import PdfIcon from "../../../assets/icons/todo.svg";
@@ -24,7 +24,7 @@ const AttachmentList = ({ attachments = [] }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // === HÀM KIỂM TRA ẢNH – BẮT BUỘC ĐẶT TRƯỚC KHI DÙNG ===
+  // kiểm tra ảnh
   const isImage = (att) => {
     if (!att?.url) return false;
     const url = att.url.toLowerCase();
@@ -35,14 +35,14 @@ const AttachmentList = ({ attachments = [] }) => {
     );
   };
 
-  // === ĐẢM BẢO attachments LÀ MẢNG TRƯỚC KHI FILTER ===
+  // ĐẢM BẢO attachments LÀ MẢNG TRƯỚC KHI FILTER 
   const safeAttachments = Array.isArray(attachments) ? attachments : [];
 
   // Lọc ảnh (tối đa 5)
   const images = safeAttachments.filter(isImage).slice(0, 5);
   const files = safeAttachments.filter((att) => !isImage(att));
 
-  // === PAN RESPONDER CHO VUỐT ẢNH ===
+  // PAN RESPONDER CHO VUỐT ẢNH
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -83,7 +83,7 @@ const AttachmentList = ({ attachments = [] }) => {
 
   return (
     <View style={styles.container}>
-      {/* === PHẦN ẢNH (TỐI ĐA 5) === */}
+      {/* PHẦN ẢNH (TỐI ĐA 5) === */}
       {images.length > 0 && (
         <View style={styles.imageSection}>
           <TouchableOpacity onPress={() => openImageModal(0)}>
@@ -124,7 +124,7 @@ const AttachmentList = ({ attachments = [] }) => {
         </View>
       )}
 
-      {/* === PHẦN FILE KHÁC === */}
+      {/* PHẦN FILE KHÁC */}
       {files.length > 0 && (
         <View style={styles.fileSection}>
           <Text style={styles.sectionTitle}>Attachments</Text>
@@ -206,7 +206,6 @@ const AttachmentList = ({ attachments = [] }) => {
 
 export default AttachmentList;
 
-// === STYLES ===
 const styles = StyleSheet.create({
   container: { backgroundColor: Colors.white, marginTop: 8 },
   imageSection: { padding: 16 },

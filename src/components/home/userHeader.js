@@ -1,4 +1,3 @@
-// components/home/userHeader.js
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Message from "../../../assets/icons/message.svg";
@@ -12,12 +11,11 @@ import NotificationBadge from "./notificationBadge";
 const UserHeader = ({ navigation }) => {
   const { user, isLoading } = useAuth();
 
-  // Loading state
   if (isLoading || !user) {
     return (
       <View style={styles.container}>
         <View style={styles.left}>
-          <View style={[styles.avatar, { backgroundColor: '#eee' }]} />
+          <View style={[styles.avatarPlaceholder]} />
           <View>
             <Text style={styles.loadingText}>Loading...</Text>
           </View>
@@ -26,18 +24,25 @@ const UserHeader = ({ navigation }) => {
     );
   }
 
-  const displayName = user.profile?.fullName || user.email?.split('@')[0] || "User";
+  const displayName = user.profile?.fullName || user.email?.split("@")[0] || "User";
   const email = user.email || "";
-  const avatarKey = user.profile?.avatar || user.avatar || "default";
+  
+  const avatarUrl = user.profile?.avatar || user.avatar;
+  const avatarKey = user.profile?.avatarKey || "default"; 
 
   return (
     <View style={styles.container}>
       <Pressable
         style={styles.left}
-        onPress={() => navigation.navigate('Profile')}
+        onPress={() => navigation.navigate("Profile")}
       >
         <View style={styles.avatarWrapper}>
-          <Avatar name={avatarKey} width={54} height={54} />
+          <Avatar
+            url={avatarUrl}        
+            name={avatarKey}       
+            width={54}
+            height={54}
+          />
           {user.isOnline && <View style={styles.onlineDot} />}
         </View>
 
@@ -57,7 +62,7 @@ const UserHeader = ({ navigation }) => {
           width={44}
           height={44}
           color={Colors.secondary}
-          onPress={() => navigation.navigate('Message')}
+          onPress={() => navigation.navigate("Message")}
         />
 
         <View style={styles.notificationWrapper}>
@@ -66,7 +71,7 @@ const UserHeader = ({ navigation }) => {
             width={44}
             height={44}
             color={Colors.secondary}
-            onPress={() => navigation.navigate('Notification')}
+            onPress={() => navigation.navigate("Notification")}
           />
           <NotificationBadge />
         </View>
@@ -131,10 +136,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#999",
   },
-  avatar: {
+  avatarPlaceholder: {
     width: 54,
     height: 54,
     borderRadius: 27,
+    backgroundColor: "#eee",
   },
 });
 

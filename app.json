@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow access to photos to upload files",
+        "NSPhotoLibraryAddUsageDescription": "We need access to save files to your photo library",
         "NSDocumentPickerURLUsageDescription": "Allow access to documents to upload files"
       }
     },
@@ -56,6 +57,14 @@
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow app to save downloaded files",
+          "savePhotosPermission": "Allow app to save downloaded files",
+          "isAccessMediaLocationEnabled": true
         }
       ]
     ],

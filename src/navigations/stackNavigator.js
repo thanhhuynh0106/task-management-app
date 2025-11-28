@@ -4,12 +4,10 @@ import ClockInAreaScreen from "../screens/clockInAreaScreen";
 import ChatScreen from "../screens/messages/chatScreen";
 import MessageScreen from "../screens/messages/messageScreen";
 import SubmitLeaveScreen from "../screens/submitLeaveScreen";
-import CreateTaskScreen from "../screens/task/createTaskScreen";
 // import EditTaskScreen from "../screens/task/editTaskScreen";
 import NotificationScreen from "../screens/notificationScreen";
 import BottomNavigator from "./bottomNavigator";
 import ProfileStackNavigator from "./profileStackNavigatior";
-
 
 const Stack = createNativeStackNavigator();
 
@@ -26,7 +24,6 @@ const StackNavigator = () => {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="SubmitLeave" component={SubmitLeaveScreen} />
       <Stack.Screen name="ClockInArea" component={ClockInAreaScreen} />
-      <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
       <Stack.Screen name="Profile" component={ProfileStackNavigator} />
       <Stack.Screen name="Notification" component={NotificationScreen} />
     </Stack.Navigator>
