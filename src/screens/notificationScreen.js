@@ -1,4 +1,5 @@
 // screens/NotificationScreen.js
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -103,17 +104,30 @@ const NotificationScreen = ({ navigation }) => {
     return past.toLocaleDateString();
   };
 
-  // Get icon by type
+  // Get icon by type using Ionicons
   const getIcon = (type) => {
     const iconMap = {
-      task_assigned: '📌',
-      task_updated: '✏️',
-      comment_added: '💬',
-      deadline_reminder: '⏰',
-      leave_approved: '✅',
-      leave_rejected: '❌',
+      task_assigned: { name: 'notifications', color: Colors.primary },
+      task_updated: { name: 'pencil', color: '#FF9500' },
+      comment_added: { name: 'chatbubble', color: '#283618' },
+      deadline_reminder: { name: 'time', color: '#FF3B30' },
+      leave_approved: { name: 'checkmark-circle', color: '#34C759' },
+      leave_rejected: { name: 'close-circle', color: '#FF3B30' },
+      task_completed: { name: 'checkmark-done-circle', color: '#34C759' },
+      task_overdue: { name: 'alert-circle', color: '#FF3B30' },
+      task_comment: { name: 'chatbubble-ellipses', color: '#007AFF' },
+      system: { name: 'information-circle', color: '#8E8E93' },
     };
-    return iconMap[type] || '📢';
+    
+    const iconConfig = iconMap[type] || { name: 'notifications-outline', color: Colors.primary };
+    
+    return (
+      <Ionicons 
+        name={iconConfig.name} 
+        size={24} 
+        color={iconConfig.color}
+      />
+    );
   };
 
   // Group notifications by date
@@ -155,7 +169,9 @@ const NotificationScreen = ({ navigation }) => {
       onPress={() => handlePress(item)}
       activeOpacity={0.7}
     >
-      <Text style={styles.icon}>{getIcon(item.type)}</Text>
+      <View style={styles.iconContainer}>
+        {getIcon(item.type)}
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={1}>
@@ -186,10 +202,12 @@ const NotificationScreen = ({ navigation }) => {
     </View>
   );
 
-  // Render empty state
+  // Render empty state with Ionicons
   const renderEmpty = () => (
     <View style={styles.empty}>
-      <Text style={styles.emptyIcon}>🔔</Text>
+      <View style={styles.emptyIconContainer}>
+        <Ionicons name="notifications-off-outline" size={64} color="#CCCCCC" />
+      </View>
       <Text style={styles.emptyTitle}>No Notifications</Text>
       <Text style={styles.emptyMessage}>You're all caught up!</Text>
     </View>
@@ -273,9 +291,14 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: Colors.primary,
   },
-  icon: { 
-    fontSize: 28, 
-    marginRight: 12 
+  iconContainer: { 
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   content: { 
     flex: 1,
@@ -327,10 +350,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 40 
   },
-  emptyIcon: { 
-    fontSize: 64, 
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
-    opacity: 0.5,
   },
   emptyTitle: { 
     fontSize: 18, 

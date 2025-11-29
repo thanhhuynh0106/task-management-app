@@ -26,6 +26,7 @@ const StackNavigator = () => {
       <Stack.Screen name="ClockInArea" component={ClockInAreaScreen} />
       <Stack.Screen name="Profile" component={ProfileStackNavigator} />
       <Stack.Screen name="Notification" component={NotificationScreen} />
+
     </Stack.Navigator>
   );
 };

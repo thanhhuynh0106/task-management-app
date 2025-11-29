@@ -21,10 +21,13 @@ import ChevronDown from "../../../assets/icons/chevron_down.svg";
 import ChevronLeft from "../../../assets/icons/chevron_left.svg";
 import ChevronRight from "../../../assets/icons/chevron_right.svg";
 import Difficulty from "../../../assets/icons/difficulty.svg";
+import Document from "../../../assets/icons/document-2.svg";
 import Priority from "../../../assets/icons/priority.svg";
 import Upload from "../../../assets/icons/upload.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
+import FileIcon from "../../components/fileIcon";
 
+import userService from '@/src/services/userService';
 import { useTaskStore } from "../../../store/index";
 import AppButton from "../../components/appButton";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
@@ -130,8 +133,9 @@ const CreateTaskScreen = ({ navigation }) => {
     setLoadingMembers(true);
     try {
       let response;
+
       if (user?.role === "hr_manager") {
-        response = await teamService.getAllMembers();
+        response = await userService.getAllUsers();
       } else if (user?.role === "team_lead" && user?.teamId) {
         response = await teamService.getTeamMembers(user.teamId);
       }
@@ -581,7 +585,7 @@ const CreateTaskScreen = ({ navigation }) => {
         <View style={styles.dialogContainer}>
           <View style={styles.dialogIconContainer}>
             <View style={styles.dialogIcon}>
-              <Text style={styles.dialogIconText}>📋</Text>
+              <Document width={40} height={40} fill="#FFFFFF" />
             </View>
           </View>
 
@@ -627,7 +631,7 @@ const CreateTaskScreen = ({ navigation }) => {
         <View style={styles.dialogContainer}>
           <View style={styles.dialogIconContainer}>
             <View style={styles.dialogIcon}>
-              <Text style={styles.dialogIconText}>📋</Text>
+              <Document width={40} height={40} fill="#FFFFFF" />
             </View>
           </View>
 
@@ -682,7 +686,11 @@ const CreateTaskScreen = ({ navigation }) => {
                       >
                         {attachment ? (
                           <View style={styles.attachmentContent}>
-                            <Text style={styles.attachmentIcon}>{getFileIcon(attachment.name)}</Text>
+                             <FileIcon 
+                                mimeType={attachment.mimeType}
+                                filename={attachment.name}
+                                size={32}
+                              />
                             <Text style={styles.attachmentName} numberOfLines={1}>
                               {attachment.name}
                             </Text>

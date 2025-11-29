@@ -25,9 +25,9 @@ import Difficulty from "../../../assets/icons/difficulty.svg";
 import Priority from "../../../assets/icons/priority.svg";
 import Upload from "../../../assets/icons/upload.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
-
 import { useTaskStore } from "../../../store/index";
 import AppButton from "../../components/appButton";
+import FileIcon from "../../components/fileIcon";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import apiClient from "../../services/api";
 import { teamService } from "../../services/index";
@@ -46,23 +46,6 @@ const DIFFICULTIES = [
   { id: 4, name: "Very Hard", level: "⭐⭐⭐⭐" },
 ];
 
-const getFileIcon = (fileName) => {
-  const ext = fileName?.split('.').pop()?.toLowerCase() || '';
-  switch (ext) {
-    case 'pdf': return '📄';
-    case 'doc':
-    case 'docx': return '📝';
-    case 'xls':
-    case 'xlsx': return '📊';
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif': return '🖼️';
-    case 'zip':
-    case 'rar': return '📦';
-    default: return '📎';
-  }
-};
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '0 B';
@@ -671,7 +654,11 @@ const EditTaskScreen = () => {
                       >
                         {attachment ? (
                           <View style={styles.attachmentContent}>
-                            <Text style={styles.attachmentIcon}>{getFileIcon(attachment.name || attachment.url)}</Text>
+                             <FileIcon 
+                                mimeType={attachment.mimeType}
+                                filename={attachment.name}
+                                size={32}
+                              />
                             <Text style={styles.attachmentName} numberOfLines={1}>
                               {attachment.name || attachment.url?.split('/').pop()}
                             </Text>

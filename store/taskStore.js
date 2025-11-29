@@ -316,21 +316,30 @@ const useTaskStore = create((set, get) => ({
    * Add comment to task
    * @param {string} id
    * @param {string} text
+   * @param {Object} user - The user object containing user details
    */
-  addComment: async (id, text) => {
+  addComment: async (id, text, user) => {
     set({ isLoading: true, error: null });
     try {
       const response = await taskService.addComment(id, text);
-      
-      set(state => ({
-        selectedTask: state.selectedTask?._id === id
-          ? {
-              ...state.selectedTask,
-              comments: [...(state.selectedTask.comments || []), text]
-            }
-          : state.selectedTask
-      }));
-      
+
+      // set(state => ({
+      //   selectedTask: state.selectedTask?._id === id
+      //     ? {
+      //         ...state.selectedTask,
+      //         comments: [
+      //           ...(state.selectedTask.comments || []), 
+      //           {
+      //             userId: user?._id || 'unknown', // Ensure user context is passed
+      //             text: text,
+      //             createdAt: new Date()
+      //           }
+      //         ]
+      //       }
+      //     : state.selectedTask
+      // }));
+      await get().fetchTaskById(id);
+
       set({ isLoading: false });
       return response;
     } catch (error) {
