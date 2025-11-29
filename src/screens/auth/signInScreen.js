@@ -1,4 +1,3 @@
-// src/screens/auth/signInScreen.js
 import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,14 +17,16 @@ import PasswordIcon from "../../../assets/icons/password.svg";
 import EyeIcon from "../../../assets/icons/eye.svg";
 import EyeOffIcon from "../../../assets/icons/eye-off.svg";
 import AppButton from "../../components/appButton";
-import InputField from "../../components/auth/inputField"
+import InputField from "../../components/auth/inputField";
 import AuthHeader from "../../components/auth/authHeader";
+import LoadingSpinner from "../../components/loadingSpinner";
 import { useAuth } from "../../contexts/authContext";
 import Colors from "../../styles/color";
 
 const SignInScreen = ({ navigation }) => {
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -50,13 +51,39 @@ const SignInScreen = ({ navigation }) => {
 
   const onSubmit = async (data) => {
     const { email, password } = data;
-    const result = await signIn(email.trim(), password.trim());
-    if (!result.success) {
-      Alert.alert("Error", result.message || "Failed to sign in.");
-      return;
+
+    setIsLoading(true);
+    try {
+      const result = await signIn(email.trim(), password.trim());
+
+      if (!result.success) {
+        Alert.alert(
+          "Login Failed",
+          result.error || "Failed to sign in. Please try again."
+        );
+        return;
+      }
+
+      // Navigation is handled by authContext
+      Alert.alert("Success", "Login successful!");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error.message || "An error occurred. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
-    await signIn(token);
   };
+
+  // Show loading spinner overlay
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LoadingSpinner text="Signing in..." />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -79,6 +106,7 @@ const SignInScreen = ({ navigation }) => {
             control={control}
             error={errors.email}
             keyboardType="email-address"
+            autoCapitalize="none"
           />
 
           <InputField
@@ -106,6 +134,7 @@ const SignInScreen = ({ navigation }) => {
             onPress={handleSubmit(onSubmit)}
             style={styles.signInButton}
             textStyle={styles.signInButtonText}
+            disabled={isLoading}
           />
 
           <View style={styles.signUpContainer}>
@@ -132,6 +161,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.gray,
   },
   forgotPassword: {
     alignSelf: "flex-end",
@@ -165,6 +198,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.gray,
   },
 });
 
