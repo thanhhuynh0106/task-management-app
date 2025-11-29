@@ -16,6 +16,7 @@ import TeamInac from "../../assets/icons/team_inac.svg"
 import LeaveAc from "../../assets/icons/leave_ac.svg"
 import LeaveInac from "../../assets/icons/leave_inac.svg"
 import CreateTaskScreen from "../screens/createTaskScreen";
+import PendingLeavesScreen from "../screens/leave/pendingLeavesScreen";
 
 const Bottom = createBottomTabNavigator();
 
@@ -63,7 +64,7 @@ const BottomNavigator = () => {
             />
             <Bottom.Screen
                 name="team"
-                component={CreateTaskScreen}
+                component={PendingLeavesScreen}
                 options={{
                     tabBarIcon: ({ focused}) => (
                         focused ? <TeamAc width={28} height={28} /> : <TeamInac width={28} height={28} />

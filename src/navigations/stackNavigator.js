@@ -7,7 +7,7 @@ import MessageScreen from "../screens/messages/messageScreen";
 import SubmitLeaveScreen from "../screens/submitLeaveScreen";
 import BottomNavigator from "./bottomNavigator";
 import ProfileStackNavigator from "./profileStackNavigatior";
-
+import PendingLeavesScreen from "../screens/leave/pendingLeavesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +26,7 @@ const StackNavigator = () => {
       <Stack.Screen name="ClockInArea" component={ClockInAreaScreen} />
       <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
       <Stack.Screen name="Profile" component={ProfileStackNavigator} />
+      <Stack.Screen name="PendingLeaves" component={PendingLeavesScreen} />
     </Stack.Navigator>
   );
 };

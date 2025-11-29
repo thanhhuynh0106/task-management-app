@@ -1,4 +1,15 @@
-import {  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+} from "react-native";
 import React, { useEffect, useState, useMemo } from "react";
 import HeaderPromo from "../components/headerPromo";
 import Colors from "../styles/color";
@@ -15,80 +26,113 @@ import { useLeaveStore } from "../../store";
 const LeaveScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Review");
   const [refreshing, setRefreshing] = useState(false);
-  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(null);
+
   const { user } = useAuth();
   
-  const { 
+
+  const {
     leaves: allLeaves,
     leaveBalance,
     isLoading,
     error,
     fetchLeaves,
     fetchLeaveBalance,
-    clearError
+    clearError,
   } = useLeaveStore();
-
 
   useEffect(() => {
     loadData();
   }, []);
 
-
   useEffect(() => {
     if (error) {
-      Alert.alert('Error', error);
+      Alert.alert("Error", error);
       clearError();
     }
   }, [error]);
 
   const loadData = async () => {
     try {
-      await Promise.all([
-        fetchLeaves(),
-        fetchLeaveBalance()
-      ]);
+      await Promise.all([fetchLeaves(), fetchLeaveBalance()]);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     }
-  }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  }
+  };
 
   // Group leaves by status - use useMemo để tránh re-compute
   const groupedLeaves = useMemo(() => {
     return {
-      pending: allLeaves.filter(leave => leave.status === 'pending'),
-      approved: allLeaves.filter(leave => leave.status === 'approved'),
-      rejected: allLeaves.filter(leave => leave.status === 'rejected')
+      pending: allLeaves.filter((leave) => leave.status === "pending"),
+      approved: allLeaves.filter((leave) => leave.status === "approved"),
+      rejected: allLeaves.filter((leave) => leave.status === "rejected"),
     };
   }, [allLeaves]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  }
+  };
 
   const formatShortDate = (dateString) => {
     const date = new Date(dateString);
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  }
+  };
 
   const renderLeaveCard = (item) => {
     const startDateFormatted = formatDate(item.startDate);
     const endDateFormatted = formatDate(item.endDate);
     const title = formatShortDate(item.startDate);
-    
+
     return (
-      <View key={item._id} style={styles.leaveCard}>
+      <Pressable
+        key={item._id}
+        style={styles.leaveCard}
+        onPress={() => {
+          setSelectedLeave(item);
+          setModalVisible(true);
+        }}
+      >
         <View style={styles.leaveHeader}>
           <Text style={styles.leaveDate}>{title}</Text>
-          <Text style={styles.leaveType}>{item.type?.toUpperCase() || 'LEAVE'}</Text>
+          <Text style={styles.leaveType}>
+            {item.type?.toUpperCase() || "LEAVE"}
+          </Text>
         </View>
 
         <View style={styles.leaveDetails}>
@@ -104,7 +148,7 @@ const LeaveScreen = ({ navigation }) => {
               {item.numberOfDays} {item.numberOfDays > 1 ? "Days" : "Day"}
             </Text>
           </View>
-          
+
           {item.reason && (
             <View style={styles.reasonContainer}>
               <Text style={styles.reasonLabel}>Reason:</Text>
@@ -112,7 +156,7 @@ const LeaveScreen = ({ navigation }) => {
             </View>
           )}
         </View>
-        
+
         <View style={styles.statusContainer}>
           {selectedTab === "Approved" && item.approvedAt && (
             <View style={[styles.pill, styles.pillApproved]}>
@@ -129,7 +173,7 @@ const LeaveScreen = ({ navigation }) => {
             </View>
           )}
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -212,7 +256,8 @@ const LeaveScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.headerText}>Total Leave</Text>
           <Text style={styles.headerSubtext}>
-            Period 1 Jan {new Date().getFullYear()} - 30 Dec {new Date().getFullYear()}
+            Period 1 Jan {new Date().getFullYear()} - 30 Dec{" "}
+            {new Date().getFullYear()}
           </Text>
         </View>
         <View style={styles.body}>
@@ -326,6 +371,113 @@ const LeaveScreen = ({ navigation }) => {
           textStyle={styles.submitButtonText}
         />
       </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+          setSelectedLeave(null);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {selectedLeave && (
+              <>
+                <Text style={styles.modalTitle}>Leave Details</Text>
+                <Text style={{fontSize:14, fontWeight:"600", color:"#505050ff", alignSelf:"center", marginBottom:10}}>
+                  Submitted by: {"User"}
+                </Text>
+                <View style={styles.leaveRow}>
+                    <Text style={styles.modalLabel}>Leave Type</Text>
+                    <Text style={styles.modalValue}>{selectedLeave.type}</Text>
+                </View>
+
+                <View style={styles.leaveRow}>
+                    <Text style={styles.modalLabel}>Date</Text>
+                    <Text style={styles.modalValue}>
+                      {formatDate(selectedLeave.startDate)} -{" "}
+                      {formatDate(selectedLeave.endDate)}
+                    </Text>
+                </View>
+
+                <View style={styles.leaveRow}>
+                                  <Text style={styles.modalLabel}>Total Days</Text>
+                <Text style={styles.modalValue}>
+                  {selectedLeave.numberOfDays}{" "}
+                  {selectedLeave.numberOfDays > 1 ? "Days" : "Day"}
+                </Text>
+                </View>
+
+                {selectedLeave.reason && (
+                  <>
+                    <View style={styles.leaveRow}>
+                                          <Text style={styles.modalLabel}>Reason</Text>
+                    <Text style={styles.modalValue}>
+                      {selectedLeave.reason}
+                    </Text>
+                    </View>
+                  </>
+                )}
+
+                {/* Status */}
+                {selectedLeave.status === "approved" &&
+                  selectedLeave.approvedAt && (
+                    <>
+                    <View style={styles.statusRow}>
+                      <Text style={[styles.statusValue, {color:"#1ac40eff"}]}> Approved on{" "}
+                        {formatDate(selectedLeave.approvedAt)}
+                      </Text>
+                    </View>
+                    <Text style={[styles.statusValue, {marginTop:10, fontSize: 13, lineHeight: 20, color:"#575757ff", textAlign:"justify"}]}>
+                      Your leave request is approved. Please ensure all your urgent tasks are completed or delegated before you leave. We hope you enjoy your well-deserved time off and return refreshed. 
+                    </Text>
+                    </>
+                  )}
+
+                {selectedLeave.status === "rejected" &&
+                  selectedLeave.rejectionReason && (
+                    <>
+                    <View style={styles.statusRow}>
+                      <Text style={[styles.statusValue, {color:"#9f0606ff"}]}> Rejected on{" "}
+                        {formatDate(selectedLeave.approvedAt)}
+                      </Text>
+                    </View>
+                    <Text style={[styles.statusValue, {marginTop:10, fontSize: 13, lineHeight: 20, color:"#575757ff", textAlign:"justify"}]}>
+                      Unfortunately, your leave request has been rejected. If you have any questions or need further clarification, please contact HR or your manager. We encourage you to discuss and resubmit your leave request when appropriate.
+                    </Text>
+                    </>
+                  )}
+
+                
+                {selectedLeave.status === "pending" && (
+                  <>
+                    <View style={styles.statusRow}>
+                      <Text style={[styles.statusValue, {color:"#ffaa00ff"}]}>
+                        Pending Approval
+                      </Text>
+                    </View>
+                    <Text style={[styles.statusValue, {marginTop:10, fontSize: 13, lineHeight: 20, color:"#575757ff", textAlign:"justify"}]}>
+                      Your leave request is currently under review. We appreciate your patience during this process. You will be notified once a decision has been made regarding your request.
+                    </Text>
+                  </>
+                )}
+
+                <AppButton
+                  text="Close"
+                  onPress={() => {
+                    setModalVisible(false);
+                    setSelectedLeave(null);
+                  }}
+                  style={styles.closeButton}
+                  textStyle={styles.closeButtonText}
+                />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -334,6 +486,89 @@ export default LeaveScreen;
 
 const styles = StyleSheet.create({
   container: {},
+  leaveRow: {
+    flexDirection: "row",
+    marginTop: 20,
+  },  
+  statusRow: {
+    flexDirection: "column",
+    marginTop: 20,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },  
+  statusLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000ff",
+    marginTop: 10,
+    alignItems: "center",
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#595959ff",
+    marginTop: 10
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    alignItems: "center",
+    justifyContent: "center",
+    alignContent: "center",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  closeButton: {
+    marginTop: 15,
+    width: "90%",
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  modalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000ff",
+    alignSelf: "flex-start",
+    alignItems: "center",
+    marginTop: 10
+  },
+  modalValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#595959ff",
+    alignSelf: "flex-start",
+    alignItems: "center",
+    marginTop: 10
+  },  
+
   summary: {
     marginTop: -80,
     marginHorizontal: 16,
@@ -505,14 +740,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pillTextApp: {
-    fontSize: 12, 
+    fontSize: 12,
     fontWeight: "600",
-    color: "#3bb539ff"
+    color: "#3bb539ff",
   },
   pillTextRej: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#d13a32ff"
+    color: "#d13a32ff",
   },
   emptyBottom: {
     alignItems: "center",

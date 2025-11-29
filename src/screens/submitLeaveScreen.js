@@ -1,15 +1,4 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, } from "react-native";
 import React, { useState } from "react";
 import Colors from "../styles/color";
 import HeaderWithBackButton from "../components/headerWithBackButton";
@@ -29,22 +18,22 @@ const mockLeaveCategories = [
   { id: 3, name: "Personal Leave", value: "personal", days: 5 },
 ];
 
-const mockTaskDelegation = [
-  { id: 1, name: "John Doe", position: "Senior Developer" },
-  { id: 2, name: "Jane Smith", position: "Project Manager" },
-  { id: 3, name: "Mike Johnson", position: "Team Lead" },
-  { id: 4, name: "Sarah Williams", position: "Developer" },
-  { id: 5, name: "Tom Brown", position: "Designer" },
-];
+// const mockTaskDelegation = [
+//   { id: 1, name: "John Doe", position: "Senior Developer" },
+//   { id: 2, name: "Jane Smith", position: "Project Manager" },
+//   { id: 3, name: "Mike Johnson", position: "Team Lead" },
+//   { id: 4, name: "Sarah Williams", position: "Developer" },
+//   { id: 5, name: "Tom Brown", position: "Designer" },
+// ];
 
-const mockCountryCodes = [
-  { id: 1, code: "+84", country: "Vietnam", flag: "🇻🇳" },
-  { id: 2, code: "+1", country: "USA", flag: "🇺🇸" },
-  { id: 3, code: "+44", country: "UK", flag: "🇬🇧" },
-  { id: 4, code: "+81", country: "Japan", flag: "🇯🇵" },
-  { id: 5, code: "+82", country: "South Korea", flag: "🇰🇷" },
-  { id: 6, code: "+86", country: "China", flag: "🇨🇳" },
-];
+// const mockCountryCodes = [
+//   { id: 1, code: "+84", country: "Vietnam", flag: "🇻🇳" },
+//   { id: 2, code: "+1", country: "USA", flag: "🇺🇸" },
+//   { id: 3, code: "+44", country: "UK", flag: "🇬🇧" },
+//   { id: 4, code: "+81", country: "Japan", flag: "🇯🇵" },
+//   { id: 5, code: "+82", country: "South Korea", flag: "🇰🇷" },
+//   { id: 6, code: "+86", country: "China", flag: "🇨🇳" },
+// ];
 
 const SubmitLeaveScreen = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -346,10 +335,10 @@ const SubmitLeaveScreen = ({ navigation }) => {
   );
 
   const [tempCategory, setTempCategory] = useState(null);
-  const [tempDelegate, setTempDelegate] = useState(null);
-  const [selectedCountryCode, setSelectedCountryCode] = useState(mockCountryCodes[0]);
-  const [tempCountryCode, setTempCountryCode] = useState(null);
-  const [emergencyContact, setEmergencyContact] = useState("");
+  // const [tempDelegate, setTempDelegate] = useState(null);
+  // const [selectedCountryCode, setSelectedCountryCode] = useState(mockCountryCodes[0]);
+  // const [tempCountryCode, setTempCountryCode] = useState(null);
+  // const [emergencyContact, setEmergencyContact] = useState("");
   const [leaveDescription, setLeaveDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -447,7 +436,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
               Calendar
             )}
 
-            {renderSelector(
+            {/* {renderSelector(
               "Task Delegation",
               selectedDelegate?.name,
               "Select task delegate",
@@ -483,7 +472,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
                   keyboardType="phone-pad"
                 />
               </View>
-            </View>
+            </View> */}
 
             <View style={styles.selectorContainer}>
               <Text style={styles.selectorLabel}>
@@ -498,6 +487,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                height={140}
               />
             </View>
           </View>
@@ -547,7 +537,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
         )
       )}
 
-      {/* Task Delegation Modal */}
+      {/* Task Delegation Modal
       {renderBottomModal(
         showDelegateModal,
         () => setShowDelegateModal(false),
@@ -572,11 +562,11 @@ const SubmitLeaveScreen = ({ navigation }) => {
             {isSelected && <View style={styles.selectedIndicator} />}
           </View>
         )
-      )}
+      )} */}
 
       {renderCalendarModal()}
 
-      {renderBottomModal(
+      {/* {renderBottomModal(
         showCountryCodeModal,
         () => setShowCountryCodeModal(false),
         () => {
@@ -599,7 +589,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
             {isSelected && <View style={styles.selectedIndicator} />}
           </View>
         )
-      )}
+      )} */}
     </SafeAreaView>
   );
 };
@@ -622,12 +612,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
+    paddingBottom: 32,
   },
   content: {
     gap: 20,
   },
   selectorContainer: {
     gap: 8,
+
   },
   selectorLabel: {
     fontSize: 16,
