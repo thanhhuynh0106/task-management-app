@@ -1,29 +1,16 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import NoTask from "../../../assets/icons/notask.svg";
+import { useTaskStore } from '../../../store';
+import Colors from "../../styles/color";
 import AppNumber from "../appNumber";
-import CardTask from "../cardTask";
-import Colors from "../../styles/color"
+import CardTask from "../task/cardTask";
+
 
 const TaskCard = () => {
-  const tasks = [
-    {
-      name: "Design new UI",
-      endDate: "5 Nov",
-      comment: 3,
-      progress: 70,
-      category: "todo",
-      flag: "high",
-    },
-    {
-      name: "Fix bugs",
-      endDate: "6 Nov",
-      comment: 1,
-      progress: 40,
-      category: "done",
-      flag: "medium",
-    },
-  ];
+  const { myTasks } = useTaskStore();
+  const tasks = myTasks.filter(t => ['in_progress', 'pending'].includes(t.status)).slice(0, 5);
+
 
   return (
     <View style={styles.wrapper}>

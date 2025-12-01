@@ -1,7 +1,7 @@
 // src/contexts/authContext.js
-import React, { createContext, useState, useEffect, useContext } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import authService from "../services/authService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -34,10 +34,15 @@ export const AuthProvider = ({ children }) => {
       setHasSeenOnboarding(onboarding === "true");
 
       // Refresh user data from API if token exists
-      if (token) {
+      if (token && storedUser) {
         try {
           const response = await authService.getCurrentUser();
-          setUser(response.data);
+          
+          // authService.getCurrentUser returns { success, data }
+          if (response?.data) {
+            setUser(response.data);
+          } else {
+          }
         } catch (error) {
           console.log("Could not refresh user data");
         }
@@ -45,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Error checking auth state:", error);
     } finally {
+
       setIsLoading(false);
     }
   };
@@ -52,6 +58,7 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (email, password) => {
     try {
       setIsLoading(true);
+      
       const response = await authService.login(email, password);
       setIsAuthenticated(true);
       setUser(response.user);
@@ -69,6 +76,7 @@ export const AuthProvider = ({ children }) => {
   const signUp = async (userData) => {
     try {
       setIsLoading(true);
+      
       const response = await authService.register(userData);
       setIsAuthenticated(true);
       setUser(response.user);
@@ -97,8 +105,14 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     try {
       const response = await authService.getCurrentUser();
-      setUser(response.data);
-      return response.data;
+      
+      // authService.getCurrentUser returns { success, data }
+      if (response?.data) {
+        setUser(response.data);
+        return response.data;
+      }
+      
+      return null;
     } catch (error) {
       console.error("Error refreshing user:", error);
       return null;
@@ -114,6 +128,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // === HELPER: CHECK ROLE ===
+  const hasRole = (role) => {
+    const userRole = user?.role;
+    const result = userRole === role;
+    return result;
+  };
+
+  const canManageTasks = () => {
+    const userRole = user?.role;
+    const canManage = userRole && ['team_lead', 'hr_manager'].includes(userRole);
+    return canManage;
+  };
+
+  const isHRManager = () => {
+    const result = user?.role === 'hr_manager';
+    return result;
+  };
+
+  const isTeamLead = () => {
+    const result = user?.role === 'team_lead';
+    return result;
+  };
+
+  const isEmployee = () => {
+    const result = user?.role === 'employee';
+    return result;
+  };
+
+  // Log current state whenever it changes
+  useEffect(() => {
+    if (!isLoading) {
+      console.log('🔄 Auth State Updated:', {
+        isAuthenticated,
+        hasUser: !!user,
+        userRole: user?.role,
+        userEmail: user?.email,
+        userName: user?.profile?.fullName,
+        isLoading
+      });
+    }
+  }, [isAuthenticated, user, isLoading]);
   /**
    * Update user profile
    * @param {Object} data - {fullName, department, position, phone, avatar}
@@ -167,6 +222,11 @@ export const AuthProvider = ({ children }) => {
         signOut,
         refreshUser,
         completeOnboarding,
+        hasRole,
+        canManageTasks,
+        isHRManager,
+        isTeamLead,
+        isEmployee,
         updateProfile,
         changePassword,
       }}

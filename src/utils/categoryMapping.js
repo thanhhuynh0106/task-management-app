@@ -1,13 +1,13 @@
-import ToDo from "../../assets/icons/todo.svg"
-import InProgress from "../../assets/icons/inprogress.svg"
-import Done from "../../assets/icons/done.svg"
-import Comment from "../../assets/icons/comment.svg"
 import CalendarTask from "../../assets/icons/calendar_task.svg"
+import Comment from "../../assets/icons/comment.svg"
+import Done from "../../assets/icons/done.svg"
 import Flag from "../../assets/icons/flag.svg"
-import MatDoTucGian from "../../assets/icons/matdotucgian.svg"
+import InProgress from "../../assets/icons/inprogress.svg"
 import MatCamBuon from "../../assets/icons/matcambuon.svg"
-import MatXanhCuoiLon from "../../assets/icons/matxanhcuoilon.svg"
+import MatDoTucGian from "../../assets/icons/matdotucgian.svg"
 import MatVangMiengNgang from "../../assets/icons/matvangmiengngang.svg"
+import MatXanhCuoiLon from "../../assets/icons/matxanhcuoilon.svg"
+import ToDo from "../../assets/icons/todo.svg"
 
 export const CategoryMap = {
     'todo': ToDo,

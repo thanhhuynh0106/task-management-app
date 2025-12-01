@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
   ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import TeamIcon from "../../../assets/icons/task-square.svg";
+import UserIcon from "../../../assets/icons/user_delegation.svg";
+import { useTeamStore } from "../../../store";
+import useUserStore from "../../../store/userStore";
+import AppButton from "../../components/appButton";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import LabeledTextInput from "../../components/profile/labeledTextInput";
 import SelectInputField from "../../components/profile/selectInputField";
-import AppButton from "../../components/appButton";
-import Colors from "../../styles/color";
-import { useTeamStore } from "../../../store";
-import { useUserStore } from "../../../store";
 import { LeaderSelectModal } from "../../components/team";
-import TeamIcon from "../../../assets/icons/task-square.svg";
-import UserIcon from "../../../assets/icons/user_delegation.svg";
+import Colors from "../../styles/color";
 
 const EditTeamScreen = ({ navigation, route }) => {
   const { teamId } = route.params;

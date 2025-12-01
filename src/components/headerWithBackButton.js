@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Back from "../../assets/icons/back.svg";
-import Colors from "../styles/color"
+import Colors from "../styles/color";
 
 const HeaderWithBackButton = ({ title, onBackPress }) => {
     

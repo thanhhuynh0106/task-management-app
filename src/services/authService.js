@@ -1,5 +1,5 @@
-import apiClient from "./api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from './api';
 
 const authService = {
   /**
@@ -150,3 +150,4 @@ const authService = {
 };
 
 export default authService;
+

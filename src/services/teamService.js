@@ -1,14 +1,29 @@
-import apiClient from "./api";
+import apiClient from './api';
 
 const teamService = {
+
   /**
-   * Get all teams
-   * @param {Object} params - {page, limit}
+   * Create a new team
+   * @param {Object} teamData - { name, description, leaderId }
+   * @returns {Promise}
+   */
+  createTeam: async (teamData) => {
+    try {
+      const response = await apiClient.post('/teams', teamData);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get all teams (with pagination)
+   * @param {Object} params - { page, limit }
    * @returns {Promise}
    */
   getAllTeams: async (params = {}) => {
     try {
-      const response = await apiClient.get("/teams", { params });
+      const response = await apiClient.get('/teams', { params });
       return response;
     } catch (error) {
       throw error;
@@ -30,23 +45,9 @@ const teamService = {
   },
 
   /**
-   * Create new team
-   * @param {Object} data - {name, description, leaderId}
-   * @returns {Promise}
-   */
-  createTeam: async (data) => {
-    try {
-      const response = await apiClient.post("/teams", data);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Update team
+   * Update team info
    * @param {string} id
-   * @param {Object} data - {name, description, leaderId}
+   * @param {Object} data - { name, description, leaderId }
    * @returns {Promise}
    */
   updateTeam: async (id, data) => {
@@ -73,16 +74,14 @@ const teamService = {
   },
 
   /**
-   * Add member to team
+   * Add a member to team
    * @param {string} teamId
    * @param {string} userId
    * @returns {Promise}
    */
   addMember: async (teamId, userId) => {
     try {
-      const response = await apiClient.post(`/teams/${teamId}/members`, {
-        userId,
-      });
+      const response = await apiClient.post(`/teams/${teamId}/members`, { userId });
       return response;
     } catch (error) {
       throw error;
@@ -97,9 +96,7 @@ const teamService = {
    */
   removeMember: async (teamId, userId) => {
     try {
-      const response = await apiClient.delete(
-        `/teams/${teamId}/members/${userId}`
-      );
+      const response = await apiClient.delete(`/teams/${teamId}/members/${userId}`);
       return response;
     } catch (error) {
       throw error;
@@ -107,16 +104,41 @@ const teamService = {
   },
 
   /**
-   * Assign team lead
+   * Assign new team leader
    * @param {string} teamId
    * @param {string} leaderId
    * @returns {Promise}
    */
   assignTeamLead: async (teamId, leaderId) => {
     try {
-      const response = await apiClient.put(`/teams/${teamId}/leader`, {
-        leaderId,
-      });
+      const response = await apiClient.put(`/teams/${teamId}/leader`, { leaderId });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get members of a specific team
+   * @param {string} teamId
+   * @returns {Promise}
+   */
+  getTeamMembers: async (teamId) => {
+    try {
+    const response = await apiClient.get(`/teams/${teamId}/members`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get all members (HR only)
+   * @returns {Promise}
+   */
+  getAllMembers: async () => {
+    try {
+      const response = await apiClient.get(`/teams/members`);
       return response;
     } catch (error) {
       throw error;

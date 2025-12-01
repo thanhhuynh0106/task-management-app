@@ -13,12 +13,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Yup from "yup";
 import EmailIcon from "../../../assets/icons/email.svg";
-import PasswordIcon from "../../../assets/icons/password.svg";
-import EyeIcon from "../../../assets/icons/eye.svg";
 import EyeOffIcon from "../../../assets/icons/eye-off.svg";
+import EyeIcon from "../../../assets/icons/eye.svg";
+import PasswordIcon from "../../../assets/icons/password.svg";
 import AppButton from "../../components/appButton";
-import InputField from "../../components/auth/inputField";
 import AuthHeader from "../../components/auth/authHeader";
+import InputField from "../../components/auth/inputField";
 import LoadingSpinner from "../../components/loadingSpinner";
 import { useAuth } from "../../contexts/authContext";
 import Colors from "../../styles/color";
@@ -138,7 +138,7 @@ const SignInScreen = ({ navigation }) => {
           />
 
           <View style={styles.signUpContainer}>
-            <Text style={styles.signUpText}>Don't have an account? </Text>
+            <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
               <Text style={styles.signUpLink}>Sign up</Text>
             </TouchableOpacity>
@@ -198,10 +198,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: "600",
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: Colors.gray,
   },
 });
 

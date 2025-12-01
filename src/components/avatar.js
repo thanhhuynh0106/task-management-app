@@ -1,24 +1,41 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { AvatarMap, DefaultAvatar } from "../utils/avatarMapping";
 
-const Avatar = ({name, width, height}) => {
-  const key = name 
-  const widthAvatar = width
-  const heightAvatar = height
-  const Svg = AvatarMap[key] || DefaultAvatar
-
+const Avatar = ({ name, url, width = 54, height = 54, style }) => {
+  if (url && typeof url === "string" && url.startsWith("http")) {
     return (
-        <View style={[styles.avatar, {width: widthAvatar, height: heightAvatar, borderRadius: widthAvatar / 2}]}>
-            <Svg width={widthAvatar} height={heightAvatar} />
-        </View>
+      <View style={[styles.container, { width, height, borderRadius: width / 2 }, style]}>
+        <Image
+          source={{ uri: url }}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => console.log("Avatar load failed:", url)} 
+        />
+      </View>
     );
-}
+  }
 
-export default Avatar;
+  const SvgComponent = AvatarMap[name] || DefaultAvatar;
+
+  return (
+    <View style={[styles.container, { width, height, borderRadius: width / 2 }, style]}>
+      <SvgComponent width={width} height={height} />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  avatar: {
-    overflow: 'hidden',
-  }
+  container: {
+    overflow: "hidden",
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
 });
+
+export default Avatar;

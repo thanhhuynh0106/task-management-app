@@ -1,19 +1,19 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
   ActivityIndicator,
+  Alert,
   FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import HeaderWithBackButton from "../../components/headerWithBackButton";
+import { useTeamStore } from "../../../store/index";
+import useUserStore from "../../../store/userStore";
 import AppButton from "../../components/appButton";
+import HeaderWithBackButton from "../../components/headerWithBackButton";
+import { SearchBar, UserCard } from "../../components/team";
 import Colors from "../../styles/color";
-import { useTeamStore } from "../../../store";
-import { useUserStore } from "../../../store";
-import { UserCard, SearchBar } from "../../components/team";
 
 const AddMemberScreen = ({ navigation, route }) => {
   const { teamId } = route.params;

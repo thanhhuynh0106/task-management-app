@@ -18,6 +18,13 @@ apiClient.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Don't override Content-Type for FormData (multipart uploads)
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      } else if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+      }
     } catch (error) {
       console.error('Error getting token:', error);
     }
@@ -31,6 +38,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
+    console.log('API Error Details:', {
+      response: error.response?.status,
+      request: !!error.request,
+      message: error.message,
+      url: error.config?.url,
+    });
+    
     if (error.response) {
       const { status, data } = error.response;
       
@@ -41,7 +55,8 @@ apiClient.interceptors.response.use(
       
       return Promise.reject(data || error.message);
     } else if (error.request) {
-      return Promise.reject({ error: 'Network error. Please check your connection.' });
+      console.error('Network request error:', error.request);
+      return Promise.reject({ error: `Network error: Cannot connect to ${API_CONFIG.BASE_URL}. Check if server is running.` });
     } else {
       return Promise.reject({ error: error.message });
     }

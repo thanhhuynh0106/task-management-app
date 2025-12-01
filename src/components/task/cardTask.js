@@ -1,0 +1,194 @@
+import React from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
+import Mouse from "../../../assets/icons/mouse.svg";
+import Colors from "../../styles/color";
+import AppButton from "./../appButton";
+import ProgressBar from "./../progressBar";
+import TaskCategory from "./../taskCategory";
+
+const CardTask = ({ 
+  name, 
+  endDate, 
+  comment, 
+  progress, 
+  category, 
+  flag, 
+  bgColor,
+  assignees = [] // New prop
+}) => {
+  const bgColors = bgColor;
+
+  // Render assignees avatars (max 3, show +N for more)
+  const renderAssignees = () => {
+    if (!assignees || assignees.length === 0) return null;
+
+    const displayedAssignees = assignees.slice(0, 3);
+    const remainingCount = assignees.length - 3;
+
+    return (
+      <View style={styles.assigneesContainer}>
+        {displayedAssignees.map((assignee, index) => (
+          <View 
+            key={assignee._id || index} 
+            style={[styles.avatarContainer, { marginLeft: index > 0 ? -8 : 0 }]}
+          >
+            {assignee.avatar ? (
+              <Image 
+                source={{ uri: assignee.avatar }} 
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                  {assignee.profile?.fullName?.charAt(0).toUpperCase() || 
+                   assignee.email?.charAt(0).toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
+          </View>
+        ))}
+        {remainingCount > 0 && (
+          <View style={[styles.avatarContainer, styles.avatarPlaceholder, { marginLeft: -8 }]}>
+            <Text style={styles.avatarText}>+{remainingCount}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.wrapper}>
+      <View style={[styles.container, { backgroundColor: bgColors || Colors.frame }]}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Mouse width={24} height={24} />
+            <Text style={styles.nameText} numberOfLines={1}>
+              {name}
+            </Text>
+          </View>
+          <View style={styles.headerRight}>
+            <AppButton text="Details" />
+          </View>
+        </View>
+        
+        <View style={styles.body}>
+          <View style={styles.progress}>
+            <TaskCategory
+              icon={category}
+              name={category}
+              textColor="#475467"
+            />
+            <TaskCategory
+              icon="flag"
+              name={flag}
+              bgColor="#F95555"
+              textColor="white"
+            />
+          </View>
+          
+          <View style={styles.footer}>
+            <ProgressBar progress={progress} />
+            
+            <View style={styles.footerBottom}>
+              <View style={styles.commentSection}>
+                <TaskCategory
+                  icon="calendar_task"
+                  name={endDate}
+                  bgColor="#F0ECFE"
+                />
+                <TaskCategory 
+                  icon="comment" 
+                  name={comment} 
+                  bgColor="#F0ECFE" 
+                />
+              </View>
+              
+              {renderAssignees()}
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+export default CardTask;
+
+const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: "center",
+    marginTop: 16,
+  },
+  container: {
+    backgroundColor: Colors.frame,
+    borderRadius: 15,
+    padding: 10,
+    width: "100%",
+    gap: 10,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignContent: "center",
+    gap: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  nameText: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  body: {
+    gap: 8,
+  },
+  progress: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  footer: {
+    marginTop: 10,
+    gap: 12,
+  },
+  footerBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  commentSection: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  assigneesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  avatarContainer: {
+    borderWidth: 2,
+    borderColor: Colors.white,
+    borderRadius: 12,
+  },
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  avatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: "600",
+  },
+});

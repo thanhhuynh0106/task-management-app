@@ -1,15 +1,13 @@
-import { View, Text, StyleSheet, Alert, RefreshControl, ActivityIndicator, Modal, TouchableOpacity } from "react-native";
-import HeaderPromo from "../components/headerPromo";
-import IconCardText from "../components/iconCardText";
-import Clock from "../../assets/icons/clock.svg";
-import Colors from "../styles/color";
-import AppButton from "../components/appButton";
-import React, { useEffect, useMemo } from "react";
-import BigCard from "../components/clockin/bigCard";
-import { ScrollView } from "react-native";
-import NoSchedules from "../../assets/icons/no_schedules.svg";
 import { useAttendanceStore } from "@/store";
-import { useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Clock from "../../assets/icons/clock.svg";
+import NoSchedules from "../../assets/icons/no_schedules.svg";
+import AppButton from "../components/appButton";
+import BigCard from "../components/clockin/bigCard";
+import HeaderPromo from "../components/headerPromo";
+import IconCardText from "../components/task/iconCardText";
+import Colors from "../styles/color";
 
 const formatWorkHours = (hours) => {
     if (typeof hours === 'number') {

@@ -1,13 +1,16 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import ClockInAreaScreen from "../screens/clockInAreaScreen";
-import CreateTaskScreen from "../screens/createTaskScreen";
 import ChatScreen from "../screens/messages/chatScreen";
 import MessageScreen from "../screens/messages/messageScreen";
 import SubmitLeaveScreen from "../screens/submitLeaveScreen";
+import EditTaskScreen from "../screens/task/editTaskScreen";
+import TaskDetailScreen from "../screens/task/taskDetailScreen";
+import CreateTaskScreen from "../screens/task/createTaskScreen";
+import ImageViewerScreen from "../screens/task/imageViewerScreen";
+import NotificationScreen from "../screens/notificationScreen";
 import BottomNavigator from "./bottomNavigator";
 import ProfileStackNavigator from "./profileStackNavigatior";
-import PendingLeavesScreen from "../screens/leave/pendingLeavesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -24,9 +27,13 @@ const StackNavigator = () => {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="SubmitLeave" component={SubmitLeaveScreen} />
       <Stack.Screen name="ClockInArea" component={ClockInAreaScreen} />
-      <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
       <Stack.Screen name="Profile" component={ProfileStackNavigator} />
-      <Stack.Screen name="PendingLeaves" component={PendingLeavesScreen} />
+      <Stack.Screen name="Notification" component={NotificationScreen} />
+      <Stack.Screen name="EditTask" component={EditTaskScreen} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+      <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
+      <Stack.Screen name="ImageViewer" component={ImageViewerScreen} />
+
     </Stack.Navigator>
   );
 };

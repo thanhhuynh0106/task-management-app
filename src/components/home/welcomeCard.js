@@ -1,9 +1,9 @@
-import { View } from "react-native";
 import React from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+
 import Welcome from "../../../assets/icons/welcome.svg";
-import { Text } from "react-native";
-import Colors from '../../styles/color'
+
+import Colors from '../../styles/color';
 
 const WelcomeCard = () => {
   return (
