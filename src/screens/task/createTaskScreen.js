@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import userService from '@/src/services/userService';
 import CalendarIcon from "../../../assets/icons/calendar-2.svg";
 import Category from "../../../assets/icons/category.svg";
 import ChevronDown from "../../../assets/icons/chevron_down.svg";
@@ -25,11 +26,9 @@ import Document from "../../../assets/icons/document-2.svg";
 import Priority from "../../../assets/icons/priority.svg";
 import Upload from "../../../assets/icons/upload.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
-import FileIcon from "../../components/fileIcon";
-
-import userService from '@/src/services/userService';
 import { useTaskStore } from "../../../store/index";
 import AppButton from "../../components/appButton";
+import FileIcon from "../../components/fileIcon";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import apiClient from "../../services/api";
 import { teamService } from "../../services/index";
@@ -47,26 +46,6 @@ const DIFFICULTIES = [
   { id: 3, name: "Hard", level: "⭐⭐⭐" },
   { id: 4, name: "Very Hard", level: "⭐⭐⭐⭐" },
 ];
-
-const getFileIcon = (fileName) => {
-  const ext = fileName?.split('.').pop()?.toLowerCase() || '';
-  switch (ext) {
-    case 'pdf': return '📄';
-    case 'doc':
-    case 'docx': return '📝';
-    case 'xls':
-    case 'xlsx': return '📊';
-    case 'ppt':
-    case 'pptx': return '🎯';
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif': return '🖼️';
-    case 'zip':
-    case 'rar': return '📦';
-    default: return '📎';
-  }
-};
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '0 B';
@@ -104,6 +83,7 @@ const CreateTaskScreen = ({ navigation }) => {
   // NEW: Confirmation and Success Dialog States
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Temp selections for modals
   const [tempMembers, setTempMembers] = useState([]);
@@ -434,6 +414,7 @@ const CreateTaskScreen = ({ navigation }) => {
   // NEW: Actual create task function
   const handleConfirmCreateTask = async () => {
     setShowConfirmDialog(false);
+    setIsUploading(true);
   
     try {
       const taskPayload = {
@@ -456,9 +437,11 @@ const CreateTaskScreen = ({ navigation }) => {
       }
   
       // Show success dialog
+      setIsUploading(false);
       setShowSuccessDialog(true);
     } catch (error) {
       console.error("Create task error:", error);
+      setIsUploading(false);
       Alert.alert("Error", error?.error || error?.message || "Failed to create task");
     }
   };
@@ -653,6 +636,21 @@ const CreateTaskScreen = ({ navigation }) => {
       </View>
     </Modal>
   );
+
+  if (isLoading || isUploading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <HeaderWithBackButton
+          title="Create New Task"
+          onBackPress={() => navigation.goBack()}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Creating task...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1201,9 +1199,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   loadingContainer: {
-    padding: 40,
-    alignItems: "center",
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.white,
   },
   // NEW: Dialog Styles
   dialogOverlay: {
