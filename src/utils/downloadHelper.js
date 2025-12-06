@@ -18,7 +18,7 @@ export const downloadToPublicStorage = async (url, filename) => {
         return await simpleDownload(url, filename); // Fallback
       }
 
-      // LUÔN SỬ DỤNG FALLBACK METHOD - KHÔNG THỬ DIRECT DOWNLOAD
+      // LUÔN SỬ DỤNG FALLBACK METHOD 
       return await downloadViaCacheFallback(url, filename, permissions.directoryUri);
     } else {
       // iOS: sử dụng cách cũ
