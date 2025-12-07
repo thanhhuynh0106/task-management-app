@@ -14,7 +14,8 @@ const CardTask = ({
   category, 
   flag, 
   bgColor,
-  assignees = [] // New prop
+  assignees = [],
+  overdue=false,
 }) => {
   const bgColors = bgColor;
 
@@ -58,7 +59,18 @@ const CardTask = ({
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.container, { backgroundColor: bgColors || Colors.frame }]}>
+      <View style={[
+        styles.container, 
+        { backgroundColor: bgColors },
+        overdue && styles.overdueContainer   // ← Highlight khi overdue
+      ]}>
+        {/* Nếu overdue → thêm banner đỏ góc trên */}
+        {overdue && (
+          <View style={styles.overdueBanner}>
+            <Text style={styles.overdueText}>OVERDUE</Text>
+          </View>
+        )}
+
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Mouse width={24} height={24} />
@@ -70,39 +82,21 @@ const CardTask = ({
             <AppButton text="Details" />
           </View>
         </View>
-        
+
+        {/* Phần còn lại giữ nguyên */}
         <View style={styles.body}>
           <View style={styles.progress}>
-            <TaskCategory
-              icon={category}
-              name={category}
-              textColor="#475467"
-            />
-            <TaskCategory
-              icon="flag"
-              name={flag}
-              bgColor="#F95555"
-              textColor="white"
-            />
+            <TaskCategory icon={category} name={category} textColor="#475467" />
+            <TaskCategory icon="flag" name={flag} bgColor="#F95555" textColor="white" />
           </View>
-          
+
           <View style={styles.footer}>
             <ProgressBar progress={progress} />
-            
             <View style={styles.footerBottom}>
               <View style={styles.commentSection}>
-                <TaskCategory
-                  icon="calendar_task"
-                  name={endDate}
-                  bgColor="#F0ECFE"
-                />
-                <TaskCategory 
-                  icon="comment" 
-                  name={comment} 
-                  bgColor="#F0ECFE" 
-                />
+                <TaskCategory icon="calendar_task" name={endDate} bgColor="#F0ECFE" />
+                <TaskCategory icon="comment" name={comment} bgColor="#F0ECFE" />
               </View>
-              
               {renderAssignees()}
             </View>
           </View>
@@ -125,6 +119,34 @@ const styles = StyleSheet.create({
     padding: 10,
     width: "100%",
     gap: 10,
+  },
+
+  overdueContainer: {
+    borderWidth: 2,
+    borderColor: "#ef4444",
+    borderStyle: "dashed",
+    position: "relative",
+  },
+  overdueBanner: {
+    position: "absolute",
+    top: -10,
+    left: "30%",
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  overdueText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   header: {
     flexDirection: "row",

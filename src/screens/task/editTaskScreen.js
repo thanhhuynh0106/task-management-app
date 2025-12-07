@@ -40,12 +40,11 @@ const PRIORITIES = [
 ];
 
 const DIFFICULTIES = [
-  { id: 1, name: "Easy", level: "⭐" },
-  { id: 2, name: "Medium", level: "⭐⭐" },
-  { id: 3, name: "Hard", level: "⭐⭐⭐" },
-  { id: 4, name: "Very Hard", level: "⭐⭐⭐⭐" },
+  { id: 'easy', name: "Easy", level: "⭐" },
+  { id: 'medium', name: "Medium", level: "⭐⭐" },
+  { id: 'hard', name: "Hard", level: "⭐⭐⭐" },
+  { id: 'very_hard', name: "Very Hard", level: "⭐⭐⭐⭐" },
 ];
-
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '0 B';
@@ -53,6 +52,45 @@ const formatFileSize = (bytes) => {
   const sizes = ['B', 'KB', 'MB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// ===== UTILITY FUNCTIONS =====
+const formatDate = (date) => date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const getDaysInMonth = (date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+  return days;
+};
+
+const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
+
+// Edit mode: Cho phép chọn ngày cũ
+const isDateSelectable = (date, field = "", selectedTask = null) => {
+  if (!date) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const checkDate = new Date(date);
+  checkDate.setHours(0, 0, 0, 0);
+  
+  // Nếu là start date và đã có start date cũ, cho phép chọn ngày cũ
+  if (field === "start" && selectedTask?.startDate) {
+    return true;
+  }
+  
+  // Nếu là due date và đã có due date cũ, cho phép chọn ngày cũ
+  if (field === "due" && selectedTask?.dueDate) {
+    return true;
+  }
+  
+  // Mặc định: chỉ cho phép từ hôm nay trở đi
+  return checkDate >= today;
 };
 
 const EditTaskScreen = () => {
@@ -137,6 +175,8 @@ const EditTaskScreen = () => {
 
       // Attachments
       setExistingAttachments(selectedTask.attachments || []);
+      setRemovedAttachmentIds([]);
+      setNewAttachments([]);
     }
   }, [selectedTask]);
 
@@ -255,38 +295,66 @@ const EditTaskScreen = () => {
   };
 
   const removeNewAttachment = (id) => {
-    setNewAttachments(newAttachments.filter(a => a.id !== id));
+    setNewAttachments(prev => prev.filter(a => a.id !== id));
   };
 
   const removeExistingAttachment = (attachmentId) => {
-    setExistingAttachments(existingAttachments.filter(a => a._id !== attachmentId));
-    setRemovedAttachmentIds([...removedAttachmentIds, attachmentId]);
+    // Thêm vào danh sách xóa
+    setRemovedAttachmentIds(prev => [...prev, attachmentId]);
+    // Xóa khỏi UI ngay lập tức
+    setExistingAttachments(prev => prev.filter(a => a._id !== attachmentId));
   };
 
   const uploadAttachments = async (files, taskIdParam) => {
     if (!files || files.length === 0) return [];
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append("attachments", {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || "application/octet-stream",
-      });
-    });
-
+    
     try {
+      const formData = new FormData();
+      
+      // FIX: Append từng file đúng cách
+      files.forEach((file) => {
+        // Tạo file object từ URI
+        formData.append("attachments", {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || "application/octet-stream",
+        });
+      });
+  
+      console.log("Uploading", files.length, "files to task:", taskIdParam);
+  
+      // FIX: Đảm bảo API gọi đúng
       const response = await apiClient.post(
         `/tasks/${taskIdParam}/attachments/bulk`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          timeout: 30000,
+          headers: { 
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 60000, // Tăng timeout
         }
       );
-      if (!response.success) throw new Error(response.error || "Upload failed");
-      return response.data;
+      
+      console.log("Upload response:", response);
+      
+      if (!response.success) {
+        throw new Error(response.error || "Upload failed");
+      }
+      
+      return response.data || [];
     } catch (error) {
-      throw error.error || error.message || "Upload failed";
+      console.error("Upload attachments error details:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+      });
+      
+      // FIX: Trả lỗi cụ thể hơn
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Network error. Please check your connection.";
+      
+      throw new Error(errorMessage);
     }
   };
 
@@ -347,6 +415,7 @@ const EditTaskScreen = () => {
 
   const handleConfirmUpdateTask = async () => {
     setShowConfirmDialog(false);
+    
     try {
       const parsedStartDate = parseDisplayDate(startDate);
       const parsedDueDate = parseDisplayDate(dueDate);
@@ -360,28 +429,52 @@ const EditTaskScreen = () => {
         return;
       }
 
+      // 1. Chuẩn bị payload
       const taskPayload = {
         title: taskTitle.trim(),
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map(m => m._id),
         priority: selectedPriority?.id || "medium",
-        difficulty: selectedDifficulty?.id || 2,
+        difficulty: selectedDifficulty?.id || 'medium',
         startDate: parsedStartDate.toISOString(),
         dueDate: parsedDueDate.toISOString(),
         removedAttachments: removedAttachmentIds,
       };
 
-      await updateTask(taskId, taskPayload);
-
+      // 2. Upload các file mới (nếu có)
       if (newAttachments.length > 0) {
-        await uploadAttachments(newAttachments, taskId);
+        try {
+          await uploadAttachments(newAttachments, taskId);
+        } catch (uploadError) {
+          console.error("Upload new attachments error:", uploadError);
+          Alert.alert(
+            "Upload Warning", 
+            "Failed to upload new attachments. Task will be updated without new files."
+          );
+        }
       }
 
+      // 3. Cập nhật task (backend sẽ xử lý removedAttachments)
+      await updateTask(taskId, taskPayload);
+
+      // 4. Hiển thị thông báo thành công
       Alert.alert("Success", "Task updated successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() }
+        { 
+          text: "OK", 
+          onPress: () => {
+            // Reset states và quay lại
+            setRemovedAttachmentIds([]);
+            setNewAttachments([]);
+            navigation.goBack();
+          }
+        }
       ]);
     } catch (error) {
-      Alert.alert("Error", error?.error || error?.message || "Failed to update task");
+      console.error("Update task error:", error);
+      Alert.alert(
+        "Error", 
+        error?.error || error?.message || "Failed to update task"
+      );
     }
   };
 
@@ -408,11 +501,13 @@ const EditTaskScreen = () => {
       return;
     }
 
-    const formatted = tempDate.toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
+    // Kiểm tra ngày có hợp lệ không (cho edit mode, cho phép ngày cũ)
+    if (!isDateSelectable(tempDate, dateField, selectedTask)) {
+      Alert.alert("Invalid Date", "Please select a valid date");
+      return;
+    }
+
+    const formatted = formatDate(tempDate);
 
     if (dateField === "start") {
       setStartDate(formatted);
@@ -422,19 +517,6 @@ const EditTaskScreen = () => {
 
     setShowCalendarModal(false);
   };
-
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
-    return days;
-  };
-
-  const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
 
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
@@ -478,21 +560,35 @@ const EditTaskScreen = () => {
           </View>
 
           <View style={styles.calendarGrid}>
-            {getDaysInMonth(currentMonth).map((day, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.calendarDay, !day && styles.emptyDay]}
-                onPress={() => day && setTempDate(day)}
-              >
-                {day && (
-                  <View style={[styles.dayCircle, isSameDay(day, tempDate) && styles.selectedDay]}>
-                    <Text style={[styles.calendarDayText, isSameDay(day, tempDate) && styles.selectedDayText]}>
-                      {day.getDate()}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+            {getDaysInMonth(currentMonth).map((day, idx) => {
+              const isSelectable = day && isDateSelectable(day, dateField, selectedTask);
+              const isSelected = day && isSameDay(day, tempDate);
+              
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.calendarDay, !day && styles.emptyDay]}
+                  onPress={() => isSelectable && setTempDate(day)}
+                  disabled={!isSelectable}
+                >
+                  {day && (
+                    <View style={[
+                      styles.dayCircle,
+                      isSelected && styles.selectedDay,
+                      !isSelectable && styles.disabledDay
+                    ]}>
+                      <Text style={[
+                        styles.calendarDayText,
+                        isSelected && styles.selectedDayText,
+                        !isSelectable && styles.disabledDayText
+                      ]}>
+                        {day.getDate()}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.modalButtons}>
@@ -630,6 +726,11 @@ const EditTaskScreen = () => {
     });
   };
 
+  // Filter out removed attachments for display
+  const displayExistingAttachments = existingAttachments.filter(
+    a => !removedAttachmentIds.includes(a._id)
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <HeaderWithBackButton title="Edit Task" onBackPress={() => navigation.goBack()} />
@@ -639,12 +740,12 @@ const EditTaskScreen = () => {
           <View style={styles.content}>
             {/* Attachments */}
             <View style={styles.selectorContainer}>
-              <Text style={styles.selectorLabel}>Attachments ({existingAttachments.length + newAttachments.length}/3)</Text>
+              <Text style={styles.selectorLabel}>Attachments ({displayExistingAttachments.length + newAttachments.length}/3)</Text>
               <Text style={styles.selectorHint}>Format: .pdf, .jpeg, .png (Max 5MB each)</Text>
               <View style={styles.attachmentRow}>
                 {[0, 1, 2].map((index) => {
-                  const attachment = existingAttachments[index] || newAttachments[index - existingAttachments.length];
-                  const isNew = newAttachments[index - existingAttachments.length];
+                  const attachment = displayExistingAttachments[index] || newAttachments[index - displayExistingAttachments.length];
+                  const isNew = index >= displayExistingAttachments.length;
                   return (
                     <View key={index} style={styles.attachmentContainer}>
                       <TouchableOpacity
@@ -940,7 +1041,12 @@ const styles = StyleSheet.create({
   priorityDot: { width: 12, height: 12, borderRadius: 6 },
   difficultyRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   difficultyLevel: { fontSize: 16 },
-  loadingContainer: { padding: 40, alignItems: "center", justifyContent: "center" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+  },
   dialogOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.6)", justifyContent: "center", alignItems: "center", padding: 20 },
   dialogContainer: { backgroundColor: Colors.white, borderRadius: 24, padding: 24, width: "100%", maxWidth: 340, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 10 },
   dialogIconContainer: { marginBottom: 20, marginTop: -50 },
@@ -952,16 +1058,75 @@ const styles = StyleSheet.create({
   dialogButtonPrimaryText: { fontSize: 16, fontWeight: "600", color: "#FFFFFF" },
   dialogButtonSecondary: { width: "100%", backgroundColor: "#F5F5F5", borderRadius: 16, paddingVertical: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#E8E8E8" },
   dialogButtonSecondaryText: { fontSize: 16, fontWeight: "600", color: Colors.primary },
-  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  monthText: { fontSize: 18, fontWeight: '600', color: '#000000' },
-  weekDays: { flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 12 },
-  weekDayText: { flex: 1, textAlign: 'center', fontSize: 14, fontWeight: '600', color: '#666666' },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, paddingBottom: 20 },
-  calendarDay: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4 },
-  emptyDay: { backgroundColor: 'transparent' },
-  dayCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  selectedDay: { backgroundColor: Colors.primary },
-  calendarDayText: { fontSize: 15, color: '#000000', fontWeight: '500' },
-  selectedDayText: { color: '#FFFFFF', fontWeight: '700' },
-  calendarModalContent: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
+  // Calendar Styles
+  calendarHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 16 
+  },
+  monthText: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#000000' 
+  },
+  weekDays: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 20, 
+    paddingBottom: 12 
+  },
+  weekDayText: { 
+    flex: 1, 
+    textAlign: 'center', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: '#666666' 
+  },
+  calendarGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    paddingHorizontal: 20, 
+    paddingBottom: 20 
+  },
+  calendarDay: { 
+    width: '14.28%', 
+    aspectRatio: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  emptyDay: { 
+    backgroundColor: 'transparent' 
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedDay: { 
+    backgroundColor: Colors.primary 
+  },
+  disabledDay: {
+    backgroundColor: '#F5F5F5',
+  },
+  calendarDayText: { 
+    fontSize: 15, 
+    color: '#000000', 
+    fontWeight: '500' 
+  },
+  selectedDayText: { 
+    color: '#FFFFFF', 
+    fontWeight: '700' 
+  },
+  disabledDayText: {
+    color: '#CCCCCC',
+  },
+  calendarModalContent: { 
+    backgroundColor: Colors.white, 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    maxHeight: '85%' 
+  },
 });

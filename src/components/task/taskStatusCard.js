@@ -1,10 +1,15 @@
-import { View, Text, StyleSheet } from "react-native";
-import React from "react";
-import Colors from "../../styles/color"
-import ProgressBar from "../progressBar";
 import { CategoryMap } from "@/src/utils/categoryMapping";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import Colors from "../../styles/color";
+import ProgressBar from "../progressBar";
 
 const TaskStatusCard = ({ todoCount, inProgressCount, doneCount }) => {
+
+  if (totalTasks === 0) {
+    return null;
+  }
+  
   const MatDoTucGian = CategoryMap["mat_do_tuc_gian"];
   const MatCamBuon = CategoryMap["mat_cam_buon"];
   const MatXanhCuoiLon = CategoryMap["mat_xanh_cuoi_lon"];

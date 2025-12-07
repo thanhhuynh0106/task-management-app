@@ -115,6 +115,9 @@ const TaskScreen = () => {
     todo: groupedTasks.todo
   };
 
+  // Calculate total tasks
+  const totalTasks = taskData.all.length;
+
   // Format task for CardTask component
   const formatTaskForCard = (task) => {
     return {
@@ -128,6 +131,7 @@ const TaskScreen = () => {
       category: task.status,
       flag: task.priority || "medium",
       assignees: task.assignedTo || [],
+      overdue: task.dueDate ? new Date(task.dueDate) < new Date() && task.status !== "done" : false,
     };
   };
 
@@ -200,6 +204,7 @@ const TaskScreen = () => {
                 flag={formattedTask.flag}
                 bgColor={Colors.white}
                 assignees={formattedTask.assignees}
+                overdue={formattedTask.overdue}
               />
             </TouchableOpacity>
           );
@@ -345,11 +350,13 @@ const TaskScreen = () => {
           />
         }
       >
-        <TaskStatusCard
-          todoCount={todoCount}
-          inProgressCount={inProgressCount}
-          doneCount={doneCount}
-        />
+        {totalTasks > 0 && (
+          <TaskStatusCard
+            todoCount={todoCount}
+            inProgressCount={inProgressCount}
+            doneCount={doneCount}
+          />
+        )}
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>

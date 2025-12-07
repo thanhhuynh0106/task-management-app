@@ -181,6 +181,40 @@ const taskService = {
   },
 
   /**
+   * Add multiple attachments to task
+   * @param {string} id
+   * @param {FormData} formData - Contains multiple files
+   * @returns {Promise}
+   */
+  addAttachmentsBulk: async (id, formData) => {
+    try {
+      const response = await apiClient.post(`/tasks/${id}/attachments/bulk`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete attachment from task
+   * @param {string} taskId
+   * @param {string} attachmentId
+   * @returns {Promise}
+   */
+  deleteAttachment: async (taskId, attachmentId) => {
+    try {
+      const response = await apiClient.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Get overdue tasks
    * @param {Object} params - {forTeam}
    * @returns {Promise}

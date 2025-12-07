@@ -41,10 +41,10 @@ const PRIORITIES = [
 ];
 
 const DIFFICULTIES = [
-  { id: 1, name: "Easy", level: "⭐" },
-  { id: 2, name: "Medium", level: "⭐⭐" },
-  { id: 3, name: "Hard", level: "⭐⭐⭐" },
-  { id: 4, name: "Very Hard", level: "⭐⭐⭐⭐" },
+  { id: 'easy', name: "Easy", level: "⭐" },
+  { id: 'medium', name: "Medium", level: "⭐⭐" },
+  { id: 'hard', name: "Hard", level: "⭐⭐⭐" },
+  { id: 'very_hard', name: "Very Hard", level: "⭐⭐⭐⭐" },
 ];
 
 const formatFileSize = (bytes) => {
@@ -54,6 +54,35 @@ const formatFileSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
+
+// ===== UTILITY FUNCTIONS =====
+const isDateSelectable = (date) => {
+  if (!date) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const checkDate = new Date(date);
+  checkDate.setHours(0, 0, 0, 0);
+  
+  // Chỉ cho phép chọn ngày từ hôm nay trở đi
+  return checkDate >= today;
+};
+
+const formatDate = (date) => date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const getDaysInMonth = (date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+  return days;
+};
+
+const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
 
 const CreateTaskScreen = ({ navigation }) => {
   const { user, canManageTasks } = useAuth();
@@ -274,8 +303,42 @@ const CreateTaskScreen = ({ navigation }) => {
     if (selectedMembers.length === 0) return { valid: false, message: 'At least one assignee is required' };
     if (!startDate) return { valid: false, message: 'Start date is required' };
     if (!dueDate) return { valid: false, message: 'Due date is required' };
-    if (new Date(dueDate) < new Date(startDate)) return { valid: false, message: 'Due date cannot be earlier than start date' };
+    
+    const start = parseDisplayDate(startDate);
+    const due = parseDisplayDate(dueDate);
+    
+    if (!start || isNaN(start.getTime())) {
+      return { valid: false, message: 'Invalid start date format' };
+    }
+    if (!due || isNaN(due.getTime())) {
+      return { valid: false, message: 'Invalid due date format' };
+    }
+    if (due < start) {
+      return { valid: false, message: 'Due date cannot be earlier than start date' };
+    }
+    
     return { valid: true };
+  };
+
+  const parseDisplayDate = (dateStr) => {
+    if (!dateStr) return null;
+    
+    const parts = dateStr.split(' ');
+    if (parts.length !== 3) return null;
+    
+    const day = parseInt(parts[0], 10);
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthIndex = monthNames.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+    const year = parseInt(parts[2], 10);
+    
+    if (isNaN(day) || monthIndex === -1 || isNaN(year)) return null;
+    
+    const date = new Date(year, monthIndex, day);
+    
+    if (isNaN(date.getTime())) return null;
+    
+    return date;
   };
 
   const handleCreateTaskPress = () => {
@@ -292,15 +355,9 @@ const CreateTaskScreen = ({ navigation }) => {
     let parsedDate = new Date();
 
     if (dateStr) {
-      const parts = dateStr.split(' ');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const monthIndex = monthNames.findIndex(m => m.toLowerCase().startsWith(parts[1].toLowerCase()));
-        const year = parseInt(parts[2], 10);
-        if (!isNaN(day) && monthIndex >= 0 && !isNaN(year)) {
-          parsedDate = new Date(year, monthIndex, day);
-        }
+      const parsed = parseDisplayDate(dateStr);
+      if (parsed && !isNaN(parsed.getTime())) {
+        parsedDate = parsed;
       }
     }
 
@@ -311,29 +368,23 @@ const CreateTaskScreen = ({ navigation }) => {
   };
 
   const confirmDate = () => {
-    if (tempDate && !isNaN(tempDate.getTime())) {
-      const formatted = tempDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      if (dateField === "start") setStartDate(formatted);
-      else setDueDate(formatted);
-      setShowCalendarModal(false);
+    if (!tempDate || isNaN(tempDate.getTime())) {
+      Alert.alert("Invalid Date", "Please select a valid date");
+      return;
     }
+    
+    // Kiểm tra ngày có được chọn từ hôm nay trở đi không
+    if (!isDateSelectable(tempDate)) {
+      Alert.alert("Invalid Date", "Please select a date from today onwards");
+      return;
+    }
+
+    const formatted = formatDate(tempDate);
+    if (dateField === "start") setStartDate(formatted);
+    else setDueDate(formatted);
+    
+    setShowCalendarModal(false);
   };
-
-  const formatDate = (date) => date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
-    return days;
-  };
-
-  const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
 
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
@@ -379,21 +430,35 @@ const CreateTaskScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.calendarGrid}>
-            {getDaysInMonth(currentMonth).map((day, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.calendarDay, !day && styles.emptyDay]}
-                onPress={() => day && setTempDate(day)}
-              >
-                {day && (
-                  <View style={[styles.dayCircle, isSameDay(day, tempDate) && styles.selectedDay]}>
-                    <Text style={[styles.calendarDayText, isSameDay(day, tempDate) && styles.selectedDayText]}>
-                      {day.getDate()}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+            {getDaysInMonth(currentMonth).map((day, idx) => {
+              const isSelectable = day && isDateSelectable(day);
+              const isSelected = day && isSameDay(day, tempDate);
+              
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.calendarDay, !day && styles.emptyDay]}
+                  onPress={() => isSelectable && setTempDate(day)}
+                  disabled={!isSelectable}
+                >
+                  {day && (
+                    <View style={[
+                      styles.dayCircle,
+                      isSelected && styles.selectedDay,
+                      !isSelectable && styles.disabledDay
+                    ]}>
+                      <Text style={[
+                        styles.calendarDayText,
+                        isSelected && styles.selectedDayText,
+                        !isSelectable && styles.disabledDayText
+                      ]}>
+                        {day.getDate()}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.modalButtons}>
@@ -409,8 +474,6 @@ const CreateTaskScreen = ({ navigation }) => {
     </Modal>
   );
 
-
-
   // NEW: Actual create task function
   const handleConfirmCreateTask = async () => {
     setShowConfirmDialog(false);
@@ -423,7 +486,7 @@ const CreateTaskScreen = ({ navigation }) => {
         assignedTo: selectedMembers.map((m) => m._id),
         teamId: user?.teamId,
         priority: selectedPriority?.id || "medium",
-        difficulty: selectedDifficulty?.id || 2,
+        difficulty: selectedDifficulty?.id || "medium",
         attachments: [],
         startDate: startDate || null,
         dueDate: dueDate || null,
@@ -1204,6 +1267,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.white,
   },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#666",
+  },
   // NEW: Dialog Styles
   dialogOverlay: {
     flex: 1,
@@ -1302,16 +1370,75 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.primary,
   },
-  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  monthText: { fontSize: 18, fontWeight: '600', color: '#000000' },
-  weekDays: { flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 12 },
-  weekDayText: { flex: 1, textAlign: 'center', fontSize: 14, fontWeight: '600', color: '#666666' },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, paddingBottom: 20 },
-  calendarDay: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4 },
-  emptyDay: { backgroundColor: 'transparent' },
-  dayCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  selectedDay: { backgroundColor: Colors.primary },
-  calendarDayText: { fontSize: 15, color: '#000000', fontWeight: '500' },
-  selectedDayText: { color: '#FFFFFF', fontWeight: '700' },
-  calendarModalContent: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
+  // Calendar Styles - ĐỒNG NHẤT HÌNH TRÒN
+  calendarHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 16 
+  },
+  monthText: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#000000' 
+  },
+  weekDays: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 20, 
+    paddingBottom: 12 
+  },
+  weekDayText: { 
+    flex: 1, 
+    textAlign: 'center', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: '#666666' 
+  },
+  calendarGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    paddingHorizontal: 20, 
+    paddingBottom: 20 
+  },
+  calendarDay: { 
+    width: '14.28%', 
+    aspectRatio: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  emptyDay: { 
+    backgroundColor: 'transparent' 
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18, // HÌNH TRÒN
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedDay: { 
+    backgroundColor: Colors.primary 
+  },
+  disabledDay: {
+    backgroundColor: '#F5F5F5',
+  },
+  calendarDayText: { 
+    fontSize: 15, 
+    color: '#000000', 
+    fontWeight: '500' 
+  },
+  selectedDayText: { 
+    color: '#FFFFFF', 
+    fontWeight: '700' 
+  },
+  disabledDayText: {
+    color: '#CCCCCC',
+  },
+  calendarModalContent: { 
+    backgroundColor: Colors.white, 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    maxHeight: '85%' 
+  },
 });

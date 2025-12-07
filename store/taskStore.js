@@ -18,18 +18,20 @@ const useTaskStore = create((set, get) => ({
     teamId: null,
     search: '',
     page: 1,
-    limit: 10
   },
 
   /**
-   * Fetch all tasks with filters
+   * Fetch all tasks with filters (UNLIMITED)
    * @param {Object} params - Optional filter parameters
    */
   fetchTasks: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
       const filters = { ...get().filters, ...params };
-      const response = await taskService.getAllTasks(filters);
+      const response = await taskService.getAllTasks({ 
+        ...filters, 
+        limit: 999999 
+      });
       
       set({ 
         tasks: response.data || [],
@@ -47,13 +49,16 @@ const useTaskStore = create((set, get) => ({
   },
 
   /**
-   * Fetch tasks assigned to current user
+   * Fetch tasks assigned to current user (UNLIMITED)
    * @param {Object} params - Optional filter parameters
    */
   fetchMyTasks: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await taskService.getMyTasks(params);
+      const response = await taskService.getMyTasks({ 
+        ...params, 
+        limit: 999999 
+      });
       
       set({ 
         myTasks: response.data || [],
@@ -71,14 +76,17 @@ const useTaskStore = create((set, get) => ({
   },
 
   /**
-   * Fetch team tasks
+   * Fetch team tasks (UNLIMITED)
    * @param {string} teamId
    * @param {Object} params - Optional filter parameters
    */
   fetchTeamTasks: async (teamId, params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await taskService.getTeamTasks(teamId, params);
+      const response = await taskService.getTeamTasks(teamId, { 
+        ...params, 
+        limit: 999999 
+      });
       
       set({ 
         teamTasks: response.data || [],
@@ -185,7 +193,7 @@ const useTaskStore = create((set, get) => ({
   },
 
   /**
-   * Delete task
+   * Delete task (HARD DELETE)
    * @param {string} id
    */
   deleteTask: async (id) => {
@@ -234,6 +242,9 @@ const useTaskStore = create((set, get) => ({
         teamTasks: state.teamTasks.map(task => 
           task._id === id ? updatedTask : task
         ),
+        selectedTask: state.selectedTask?._id === id 
+          ? updatedTask 
+          : state.selectedTask,
         isLoading: false
       }));
       
@@ -268,6 +279,9 @@ const useTaskStore = create((set, get) => ({
         teamTasks: state.teamTasks.map(task => 
           task._id === id ? updatedTask : task
         ),
+        selectedTask: state.selectedTask?._id === id 
+          ? updatedTask 
+          : state.selectedTask,
         isLoading: false
       }));
       
@@ -299,7 +313,6 @@ const useTaskStore = create((set, get) => ({
         isLoading: false
       }));
       
-      // Refresh my tasks
       await get().fetchMyTasks();
       
       return response;
@@ -322,24 +335,7 @@ const useTaskStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await taskService.addComment(id, text);
-
-      // set(state => ({
-      //   selectedTask: state.selectedTask?._id === id
-      //     ? {
-      //         ...state.selectedTask,
-      //         comments: [
-      //           ...(state.selectedTask.comments || []), 
-      //           {
-      //             userId: user?._id || 'unknown', // Ensure user context is passed
-      //             text: text,
-      //             createdAt: new Date()
-      //           }
-      //         ]
-      //       }
-      //     : state.selectedTask
-      // }));
       await get().fetchTaskById(id);
-
       set({ isLoading: false });
       return response;
     } catch (error) {
@@ -361,7 +357,6 @@ const useTaskStore = create((set, get) => ({
     try {
       const response = await taskService.addAttachment(id, formData);
       
-      // Refresh task details to get updated attachments
       if (get().selectedTask?._id === id) {
         await get().fetchTaskById(id);
       }
@@ -378,13 +373,67 @@ const useTaskStore = create((set, get) => ({
   },
 
   /**
-   * Fetch overdue tasks
+   * Add multiple attachments to task
+   * @param {string} id
+   * @param {FormData} formData
+   */
+  addAttachmentsBulk: async (id, formData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await taskService.addAttachmentsBulk(id, formData);
+      
+      if (get().selectedTask?._id === id) {
+        await get().fetchTaskById(id);
+      }
+      
+      set({ isLoading: false });
+      return response;
+    } catch (error) {
+      set({ 
+        error: error?.error || 'Failed to add attachments',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Delete attachment from task
+   * @param {string} taskId
+   * @param {string} attachmentId
+   */
+  deleteAttachment: async (taskId, attachmentId) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await taskService.deleteAttachment(taskId, attachmentId);
+      
+      // Cập nhật selectedTask nếu đang xem task đó
+      if (get().selectedTask?._id === taskId) {
+        await get().fetchTaskById(taskId);
+      }
+      
+      set({ isLoading: false });
+      return response;
+    } catch (error) {
+      set({ 
+        error: error?.error || 'Failed to delete attachment',
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Fetch overdue tasks (UNLIMITED)
    * @param {Object} params - Optional parameters
    */
   fetchOverdueTasks: async (params = {}) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await taskService.getOverdueTasks(params);
+      const response = await taskService.getOverdueTasks({ 
+        ...params, 
+        limit: 999999 
+      });
       set({ isLoading: false });
       return response;
     } catch (error) {
@@ -440,7 +489,6 @@ const useTaskStore = create((set, get) => ({
         teamId: null,
         search: '',
         page: 1,
-        limit: 10
       }
     });
   },
@@ -485,7 +533,6 @@ const useTaskStore = create((set, get) => ({
         teamId: null,
         search: '',
         page: 1,
-        limit: 10
       }
     });
   },
@@ -548,6 +595,5 @@ const useTaskStore = create((set, get) => ({
     return filtered;
   }
 }));
-
 
 export default useTaskStore;

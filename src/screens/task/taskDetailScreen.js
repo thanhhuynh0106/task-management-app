@@ -1,4 +1,3 @@
-// TaskDetailScreen.js - ĐÃ FIX HANDLE DOWNLOAD
 import { useAuth } from "@/src/contexts/authContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
@@ -8,7 +7,6 @@ import {
   Dimensions,
   Image,
   Modal,
-  Platform,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -18,7 +16,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { downloadToPublicStorage, shareAndDownload, simpleDownload } from "../../utils/downloadHelper"; // THÊM CÁC HÀM DOWNLOAD KHÁC
+import { downloadFile } from "../../utils/downloadHelper";
 
 import DownloadIcon from "../../../assets/icons/arrow-down.svg";
 import ChevronLeftIcon from "../../../assets/icons/chevron_left.svg";
@@ -34,6 +32,7 @@ import HeaderWithBackButton from "../../components/headerWithBackButton";
 import AddComment from "../../components/task/addComment";
 import CommentList from "../../components/task/commentList";
 import Colors from "../../styles/color";
+import { getAbsoluteFileUrl } from "../../utils/fileUrlHelper";
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,8 +40,9 @@ const TaskDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { taskId } = route.params;
+  const [downloadingFileId, setDownloadingFileId] = useState(null);
 
-  const { user } = useAuth(); 
+  const { user, canManageTasks } = useAuth(); 
   const {
     selectedTask,
     isLoading,
@@ -56,7 +56,6 @@ const TaskDetailScreen = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [downloadingImage, setDownloadingImage] = useState(false);
-  const [downloadingFiles, setDownloadingFiles] = useState({}); // THEO DÕI TRẠNG THÁI DOWNLOAD CỦA TỪNG FILE
 
   useEffect(() => {
     fetchTaskById(taskId);
@@ -69,104 +68,32 @@ const TaskDetailScreen = () => {
     return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
-  // ===== FIXED DOWNLOAD FUNCTIONS =====
-  const handleDownloadFile = async (file, index) => {
-    try {
-      // Hiển thị trạng thái loading cho file cụ thể
-      setDownloadingFiles(prev => ({ ...prev, [index]: true }));
-      
-      // Kiểm tra URL hợp lệ
-      if (!file.url || !file.name) {
-        throw new Error('File information is incomplete');
-      }
-
-      // Kiểm tra nếu URL bắt đầu bằng http
-      if (!file.url.startsWith('http')) {
-        throw new Error('Invalid file URL');
-      }
-
-      console.log('Downloading file:', { url: file.url, name: file.name, size: file.size });
-
-      // Sử dụng downloadToPublicStorage cho Android, simpleDownload cho iOS
-      let result;
-      if (Platform.OS === 'android') {
-        result = await downloadToPublicStorage(file.url, file.name);
-      } else {
-        result = await simpleDownload(file.url, file.name);
-      }
-
-      if (!result) {
-        throw new Error('Download failed - no result returned');
-      }
-
-      console.log('Download successful:', result);
-
-    } catch (error) {
-      console.error('Download file error:', error);
-      
-      let errorMessage = 'Cannot download file. Please try again.';
-      
-      if (error.message.includes('Network request failed')) {
-        errorMessage = 'Network error. Please check your internet connection.';
-      } else if (error.message.includes('Permission Denied')) {
-        errorMessage = 'Storage permission denied. Please allow storage access.';
-      } else if (error.message.includes('Invalid file URL')) {
-        errorMessage = 'Invalid file URL. Cannot download this file.';
-      }
-      
-      Alert.alert('Download Failed', errorMessage);
-    } finally {
-      // Ẩn trạng thái loading
-      setDownloadingFiles(prev => ({ ...prev, [index]: false }));
-    }
-  };
-
-  const handleDownloadWithOptions = (file, index) => {
-    if (Platform.OS === 'android') {
-      Alert.alert(
-        'Download Options',
-        'Choose download method:',
-        [
-          {
-            text: 'Save to Downloads',
-            onPress: async () => {
-              try {
-                setDownloadingFiles(prev => ({ ...prev, [index]: true }));
-                await downloadToPublicStorage(file.url, file.name);
-              } catch (error) {
-                Alert.alert('Download Failed', 'Cannot save to Downloads');
-              } finally {
-                setDownloadingFiles(prev => ({ ...prev, [index]: false }));
-              }
+  // ===== DOWNLOAD LOGIC TỪ FILE THỨ 2 =====
+  const handleDownload = async (url, filename, fileId) => {
+    Alert.alert(
+      'Download File',
+      `Do you want to download "${filename}"?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Download',
+          onPress: async () => {
+            try {
+              setDownloadingFileId(fileId);
+              await downloadFile(url, filename);
+              setDownloadingFileId(null);
+            } catch (error) {
+              console.error('Download failed:', error);
+              setDownloadingFileId(null);
+              Alert.alert('Download Error', 'Failed to download file. Please try again.');
             }
           },
-          {
-            text: 'Choose Location',
-            onPress: async () => {
-              try {
-                setDownloadingFiles(prev => ({ ...prev, [index]: true }));
-                await shareAndDownload(file.url, file.name);
-              } catch (error) {
-                Alert.alert('Share Failed', 'Cannot share file');
-              } finally {
-                setDownloadingFiles(prev => ({ ...prev, [index]: false }));
-              }
-            }
-          },
-          {
-            text: 'Simple Download',
-            onPress: () => handleDownloadFile(file, index)
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          }
-        ]
-      );
-    } else {
-      // iOS: chỉ dùng simple download
-      handleDownloadFile(file, index);
-    }
+        },
+      ],
+    );
   };
 
   const handleDownloadImage = async () => {
@@ -180,17 +107,8 @@ const TaskDetailScreen = () => {
       const filename = image.name || `image_${currentImageIndex + 1}_${Date.now()}.jpg`;
       
       console.log('Downloading image:', { url: image.url, name: filename });
-
-      let result;
-      if (Platform.OS === 'android') {
-        result = await downloadToPublicStorage(image.url, filename);
-      } else {
-        result = await simpleDownload(image.url, filename);
-      }
-
-      if (!result) {
-        throw new Error('Download failed');
-      }
+      
+      await downloadFile(image.url, filename);
 
     } catch (error) {
       console.error('Download image error:', error);
@@ -291,31 +209,27 @@ const TaskDetailScreen = () => {
     const formatted = date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
+      year: "numeric",
     });
 
     let color = "#34C759";
-    let bgColor = "#E6F7EC";
     let label = formatted;
 
     if (diffDays < 0) {
-      color = "#FF3B30";
-      bgColor = "#FFE6E6";
+      color = "#c3271fff";
       label = `Overdue (${formatted})`;
     } else if (diffDays === 0) {
-      color = "#FF9500";
-      bgColor = "#FFF4E6";
+      color = "#cc8219ff";
       label = `Today (${formatted})`;
     } else if (diffDays === 1) {
-      color = "#FF9500";
-      bgColor = "#FFF4E6";
+      color = "#fdb550ff";
       label = `Tomorrow (${formatted})`;
     } else if (diffDays <= 3) {
-      color = "#FF9500";
-      bgColor = "#FFF4E6";
-      label = `${diffDays}d left`;
+      color = "#39d82aff";
+      label = `${diffDays} days left`;
     }
 
-    return { label, color, bgColor };
+    return { label, color };
   };
 
   const getPriorityConfig = (priority) => {
@@ -327,6 +241,15 @@ const TaskDetailScreen = () => {
     return map[priority] || map.medium;
   };
 
+  const getDifficultyConfig = (difficulty) => {
+    const map = {
+      easy: { color: "#34C759", bgColor: "#E6F7EC", label: "Easy" },
+      medium: { color: "#FF9500", bgColor: "#FFF4E6", label: "Medium" },
+      hard: { color: "#FF3B30", bgColor: "#FFE6E6", label: "Hard" },
+      very_hard: { color: "#8E8E93", bgColor: "#F2F2F7", label: "Very Hard" },
+    };
+    return map[difficulty] || map.medium;
+  };
   if (isLoading || !selectedTask) {
     return (
       <View style={styles.loading}>
@@ -336,20 +259,32 @@ const TaskDetailScreen = () => {
     );
   }
 
+  const canManageTask = canManageTasks();
   const statusKey = selectedTask.status === "in_progress" ? "inprogress" : selectedTask.status;
   const StatusIcon = CategoryMap[statusKey] || DefaultCategory;
   const statusConfig = getStatusConfig(selectedTask.status);
   const priorityConfig = getPriorityConfig(selectedTask.priority);
+  const difficultyConfig = getDifficultyConfig(selectedTask.difficulty);
   const deadlineInfo = selectedTask.dueDate ? formatDeadline(selectedTask.dueDate) : null;
 
-  // Lọc ảnh và file
-  const imageAttachments = selectedTask.attachments?.filter((att) =>
-    att.type?.includes("image") || /\.(jpe?g|png|gif|webp)$/i.test(att.url)
-  ) || [];
+  // Lọc ảnh và file, convert URL to absolute
+  const imageAttachments = (selectedTask.attachments || [])
+    .filter((att) =>
+      att.type?.includes("image") || /\.(jpe?g|png|gif|webp)$/i.test(att.url)
+    )
+    .map((att) => ({
+      ...att,
+      url: getAbsoluteFileUrl(att.url),
+    }));
 
-  const fileAttachments = selectedTask.attachments?.filter(
-    (att) => !att.type?.includes("image") && !/\.(jpe?g|png|gif|webp)$/i.test(att.url)
-  ) || [];
+  const fileAttachments = (selectedTask.attachments || [])
+    .filter(
+      (att) => !att.type?.includes("image") && !/\.(jpe?g|png|gif|webp)$/i.test(att.url)
+    )
+    .map((att) => ({
+      ...att,
+      url: getAbsoluteFileUrl(att.url),
+    }));
 
   const currentImage = selectedImages[currentImageIndex];
 
@@ -373,46 +308,93 @@ const TaskDetailScreen = () => {
         }
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header Section */}
-        <View style={styles.headerCard}>
+        {/* Header Section - Giao diện mới như file 2 */}
+        <View style={styles.headerSection}>
           <View style={styles.headerTop}>
-            <View style={styles.titleSection}>
+            <View style={styles.titleWrapper}>
               <Text style={styles.taskTitle}>{selectedTask.title}</Text>
-              <Text style={styles.createdDate}>
-                Created {formatDate(selectedTask.createdAt)}
-              </Text>
+              <Text style={styles.createdDate}>Created {formatDate(selectedTask.createdAt)}</Text>
             </View>
             
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                onPress={() => navigation.navigate("EditTask", { taskId })} 
-                style={[styles.actionBtn, styles.editBtn]}
-              >
-                <EditIcon width={20} height={20} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={handleDelete} 
-                style={[styles.actionBtn, styles.deleteBtn]}
-              >
-                <TrashIcon width={20} height={20} />
-              </TouchableOpacity>
-            </View>
+            {canManageTask && (
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate("EditTask", { taskId })} 
+                  style={styles.actionBtn}
+                >
+                  <EditIcon width={20} height={20} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={handleDelete} 
+                  style={styles.actionBtn}
+                >
+                  <TrashIcon width={20} height={20} />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
-          {/* Status Badge */}
-          <View style={[styles.statusBadge, { backgroundColor: statusConfig.bgColor }]}>
-            <StatusIcon width={16} height={16} fill={statusConfig.color} />
-            <Text style={[styles.statusBadgeText, { color: statusConfig.color }]}>
-              {statusConfig.label}
-            </Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabelInline}>Status:</Text>
+              <View style={[styles.infoBadge, { backgroundColor: Colors.primary }]}>
+                <Text style={styles.badgeTextSmall}>{statusConfig.label}</Text>
+              </View>
+            </View>
+
+            {/* Priority */}
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabelInline}>Priority:</Text>
+              <View style={[
+                styles.infoBadge,
+                {
+                  backgroundColor:
+                    selectedTask.priority === "high" ? "#FF3B30" :
+                    selectedTask.priority === "medium" ? "#FF9500" : "#34C759"
+                }
+              ]}>
+                <Text style={styles.badgeTextSmall}>
+                  {selectedTask.priority?.charAt(0).toUpperCase() + selectedTask.priority?.slice(1) || "Medium"}
+                </Text>
+              </View>
+            </View>
+
+
+            {/* Difficulty */}
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabelInline}>Difficulty:</Text>
+              <View style={[
+                styles.infoBadge,
+                {
+                  backgroundColor:
+                    selectedTask.difficulty === "easy" ? "#34C759" :
+                    selectedTask.difficulty === "hard" ? "#FF3B30" : "#FF9500"
+                }
+              ]}>
+                <Text style={styles.badgeTextSmall}>
+                  {selectedTask.difficulty?.charAt(0).toUpperCase() + selectedTask.difficulty?.slice(1) || "Medium"}
+                </Text>
+              </View>
+            </View>
+
+            {/* Deadline */}
+            {selectedTask.dueDate && (() => {
+              const deadline = formatDeadline(selectedTask.dueDate);
+              return deadline ? (
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabelInline}>Deadline:</Text>
+                  <View style={[styles.infoBadge, { backgroundColor: deadline.color }]}>
+                    <Text style={styles.badgeTextSmall}>{deadline.label}</Text>
+                  </View>
+                </View>
+              ) : null;
+            })()}
           </View>
         </View>
 
         {/* === HIỂN THỊ ẢNH === */}
         {imageAttachments.length > 0 && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Images ({imageAttachments.length})</Text>
-            
+          <View style={styles.section}>
             {imageAttachments.length === 1 && (
               <TouchableOpacity
                 onPress={() => openImageViewer(imageAttachments)}
@@ -465,140 +447,136 @@ const TaskDetailScreen = () => {
 
         {/* === FILE ATTACHMENTS SECTION === */}
         {fileAttachments.length > 0 && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Files ({fileAttachments.length})</Text>
-            
-            {fileAttachments.map((file, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleDownloadWithOptions(file, index)}
-                style={styles.fileItem}
-                disabled={downloadingFiles[index]}
-              >
-                <View style={styles.fileIconContainer}>
+          <View style={styles.section}>
+            {fileAttachments.map((file, idx) => {
+              const filename = file.name || file.url.split("/").pop().split("?")[0];
+              const sizeMB = file.size ? formatFileSize(file.size) : null;
+              const isDownloading = downloadingFileId === (file._id || idx);
+              
+              return (
+                <TouchableOpacity
+                  key={file._id || idx}
+                  style={styles.fileItem}
+                  onPress={() => handleDownload(file.url, filename, file._id || idx)}
+                  disabled={isDownloading}
+                >
                   <FileIcon 
                     mimeType={file.type} 
                     filename={file.name} 
-                    size={24} 
+                    size={28}
+                    style={styles.fileIcon}
                   />
-                </View>
-                
-                <View style={styles.fileInfo}>
-                  <Text style={styles.fileName} numberOfLines={1}>
-                    {file.name}
-                  </Text>
-                  <Text style={styles.fileSize}>
-                    {formatFileSize(file.size)}
-                  </Text>
-                </View>
-                
-                <TouchableOpacity 
-                  onPress={() => handleDownloadWithOptions(file, index)}
-                  style={styles.downloadBtn}
-                  disabled={downloadingFiles[index]}
-                >
-                  {downloadingFiles[index] ? (
+                  <View style={{ flex: 1, marginLeft: 14 }}>
+                    <Text style={styles.fileName} numberOfLines={2}>{filename}</Text>
+                    {sizeMB && <Text style={styles.fileSize}>{sizeMB}</Text>}
+                  </View>
+                  {isDownloading ? (
                     <ActivityIndicator size="small" color={Colors.primary} />
                   ) : (
-                    <DownloadIcon width={20} height={20} fill={Colors.primary} />
+                    <DownloadIcon width={24} height={24} fill={Colors.primary} />
                   )}
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
 
-        {/* Description Section */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Description</Text>
+        {/* Description Section - Giao diện mới */}
+        <View style={styles.section}>
           <View style={styles.descriptionBox}>
+            <Text style={styles.descriptionLabel}>Description</Text>
             <Text style={styles.descriptionText}>
               {selectedTask.description || "No description provided"}
             </Text>
           </View>
         </View>
 
-        {/* Compact Info Row */}
-        <View style={styles.compactInfoRow}>
-          {/* Priority */}
-          <View style={styles.compactInfoItem}>
-            <Text style={styles.compactInfoLabel}>Priority</Text>
-            <View style={[styles.compactInfoBadge, { backgroundColor: priorityConfig.bgColor }]}>
-              <View style={[styles.dot, { backgroundColor: priorityConfig.color }]} />
-              <Text style={[styles.compactInfoBadgeText, { color: priorityConfig.color }]}>
-                {priorityConfig.label}
-              </Text>
-            </View>
-          </View>
-
-          {/* Difficulty */}
-          <View style={styles.compactInfoItem}>
-            <Text style={styles.compactInfoLabel}>Difficulty</Text>
-            <View style={[styles.compactInfoBadge, { backgroundColor: "#F0F7FF" }]}>
-              <View style={[styles.dot, { backgroundColor: "#007AFF" }]} />
-              <Text style={[styles.compactInfoBadgeText, { color: "#007AFF" }]}>
-                Easy
-              </Text>
-            </View>
-          </View>
-
-          {/* Deadline */}
-          {deadlineInfo && (
-            <View style={styles.compactInfoItem}>
-              <Text style={styles.compactInfoLabel}>Deadline</Text>
-              <View style={[styles.compactInfoBadge, { backgroundColor: deadlineInfo.bgColor }]}>
-                <View style={[styles.dot, { backgroundColor: deadlineInfo.color }]} />
-                <Text style={[styles.compactInfoBadgeText, { color: deadlineInfo.color }]}>
-                  {deadlineInfo.label}
-                </Text>
+        {/* Assignee Section - Thêm từ file 2 */}
+        {selectedTask.assignedTo?.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Assignee</Text>
+            {selectedTask.assignedTo?.map((person) => (
+              <View key={person._id} style={styles.assigneeItem}>
+                {person.profile?.avatar ? (
+                  <Image source={{ uri: person.profile.avatar }} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Text style={styles.avatarText}>
+                      {person.profile?.fullName?.charAt(0).toUpperCase() || "U"}
+                    </Text>
+                  </View>
+                )}
+                <View>
+                  <Text style={styles.assigneeName}>{person.profile?.fullName || person.email}</Text>
+                  <Text style={styles.assigneeRole}>
+                    {person.role?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Employee"}
+                  </Text>
+                </View>
               </View>
+            ))}
+          </View>
+        )}
+
+        {/* Status Update Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Status</Text>
+          {(selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask) ? (
+            <View style={styles.statusCheckboxContainer}>
+              <TouchableOpacity
+                style={styles.checkboxItem}
+                onPress={() => handleStatusUpdate("todo")}
+              >
+                <View style={[
+                  styles.checkbox,
+                  selectedTask.status === "todo" && styles.checkboxChecked
+                ]}>
+                  {selectedTask.status === "todo" && (
+                    <View style={styles.checkboxInner} />
+                  )}
+                </View>
+                <Text style={styles.checkboxLabel}>To Do</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkboxItem}
+                onPress={() => handleStatusUpdate("in_progress")}
+              >
+                <View style={[
+                  styles.checkbox,
+                  selectedTask.status === "in_progress" && styles.checkboxChecked
+                ]}>
+                  {selectedTask.status === "in_progress" && (
+                    <View style={styles.checkboxInner} />
+                  )}
+                </View>
+                <Text style={styles.checkboxLabel}>In Progress</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkboxItem}
+                onPress={() => handleStatusUpdate("done")}
+              >
+                <View style={[
+                  styles.checkbox,
+                  selectedTask.status === "done" && styles.checkboxChecked
+                ]}>
+                  {selectedTask.status === "done" && (
+                    <View style={styles.checkboxInner} />
+                  )}
+                </View>
+                <Text style={styles.checkboxLabel}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[styles.statusBadge, { backgroundColor: Colors.primary, alignSelf: "flex-start" }]}>
+              <StatusIcon width={18} height={18} fill="#FFF" style={{ marginRight: 6 }} />
+              <Text style={styles.statusBadgeText}>{statusConfig.label}</Text>
             </View>
           )}
         </View>
 
-        {/* Status Update Section */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Update Status</Text>
-          <Text style={styles.sectionSubtitle}>Progress forward only</Text>
-          
-          <View style={styles.statusButtonsContainer}>
-            {["todo", "in_progress", "done"].map((status) => {
-              const config = getStatusConfig(status);
-              const isActive = selectedTask.status === status;
-              const isDisabled = !canUpdateStatus(selectedTask.status, status);
-              
-              return (
-                <TouchableOpacity
-                  key={status}
-                  onPress={() => handleStatusUpdate(status)}
-                  disabled={isDisabled}
-                  style={[
-                    styles.statusBtn,
-                    isActive && styles.statusBtnActive,
-                    isDisabled && styles.statusBtnDisabled,
-                    { borderColor: config.color }
-                  ]}
-                >
-                  <View style={[styles.statusIcon, { backgroundColor: config.bgColor }]}>
-                    <StatusIcon width={16} height={16} fill={config.color} />
-                  </View>
-                  <Text style={[
-                    styles.statusBtnText,
-                    { color: isActive ? config.color : isDisabled ? '#CCC' : '#666' }
-                  ]}>
-                    {config.label}
-                  </Text>
-                  {isActive && (
-                    <View style={[styles.activeDot, { backgroundColor: config.color }]} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
         {/* Comments Section */}
-        <View style={styles.sectionCard}>
+        <View style={styles.section}>
           <View style={styles.commentsHeader}>
             <Text style={styles.sectionTitle}>Comments</Text>
             <Text style={styles.commentsCount}>
@@ -692,13 +670,13 @@ export default TaskDetailScreen;
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#F8F9FA" 
+    backgroundColor: Colors.white 
   },
   loading: { 
     flex: 1, 
     justifyContent: "center", 
     alignItems: "center",
-    backgroundColor: "#F8F9FA"
+    backgroundColor: Colors.white
   },
   loadingText: {
     marginTop: 12,
@@ -709,153 +687,120 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 30,
   },
-  headerCard: {
-    backgroundColor: Colors.white,
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+  // Header Section - Giao diện mới
+  headerSection: {
+    backgroundColor: "#FFF",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderColor: "#EFEFF0",
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  titleSection: {
+  titleWrapper: {
     flex: 1,
     marginRight: 12,
   },
   taskTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 8,
-    lineHeight: 32,
+    color: "#000",
+    marginBottom: 6,
   },
-  createdDate: {
-    fontSize: 14,
-    color: "#8E8E93",
-    fontWeight: "500",
+  createdDate: { 
+    fontSize: 13, 
+    color: "#999" 
   },
   headerActions: {
     flexDirection: "row",
     gap: 8,
   },
   actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    padding: 10,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
   },
-  editBtn: {
-    borderColor: Colors.primary,
-    backgroundColor: "#F0F7FF",
+  infoRow: {
+    flexDirection: "column",
+    gap: 8,
   },
-  deleteBtn: {
-    borderColor: "#FFE6E6",
-    backgroundColor: "#FFF0F0",
+  infoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  infoLabelInline: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#666",
+    width: 70,
+  },
+  infoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  badgeTextSmall: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     alignSelf: "flex-start",
-    gap: 8,
   },
   statusBadgeText: {
-    fontSize: 14,
+    color: "#FFF",
+    fontSize: 13,
     fontWeight: "600",
   },
-  sectionCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 16,
-    marginBottom: 16,
+
+  // Generic section
+  section: {
+    backgroundColor: "#FFF",
     padding: 20,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderBottomWidth: 1,
+    borderColor: "#EFEFF0",
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 16,
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 12,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#8E8E93",
-    marginBottom: 16,
-  },
+
+  // Description box
   descriptionBox: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#FAFBFC",
     borderWidth: 1,
-    borderColor: "#E8E9EB",
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: "#FAFAFA",
+  },
+  descriptionLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
   },
   descriptionText: {
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 22,
-    color: "#444",
+    color: "#666",
   },
-  // Compact Info Row Styles
-  compactInfoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    gap: 8,
-  },
-  compactInfoItem: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    alignItems: "center",
-  },
-  compactInfoLabel: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  compactInfoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  compactInfoBadgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
+
   // ===== IMAGE STYLES =====
   singleImageWrapper: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
     elevation: 4,
     shadowColor: "#0003",
@@ -870,26 +815,27 @@ const styles = StyleSheet.create({
   },
   twoImageItem: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
     elevation: 3,
     shadowColor: "#0002",
   },
   twoImage: { 
     width: "100%", 
-    height: 200 
+    height: 260 
   },
   threePlusLayout: { 
-    gap: 10 
+    marginTop: 8 
   },
   mainImageWrapper: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
+    marginBottom: 10,
     elevation: 3,
   },
   mainImage: { 
     width: "100%", 
-    height: 240 
+    height: 320 
   },
   smallImagesRow: { 
     flexDirection: "row", 
@@ -897,98 +843,114 @@ const styles = StyleSheet.create({
   },
   smallImageWrapper: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
     elevation: 2,
   },
   smallImage: { 
     width: "100%", 
-    height: 120 
+    height: 150 
   },
+
   // ===== FILE ATTACHMENT STYLES =====
   fileItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#FAFBFC',
-    borderWidth: 1,
-    borderColor: '#E8E9EB',
-    marginBottom: 8,
-  },
-  fileIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#F0F7FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  fileIcon: {
-    fontSize: 18,
-  },
-  fileInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  fileName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1A1A1A',
-    marginBottom: 2,
-  },
-  fileSize: {
-    fontSize: 13,
-    color: '#8E8E93',
-  },
-  downloadBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F0F7FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Status Buttons
-  statusButtonsContainer: {
-    gap: 12,
-    marginTop: 8,
-  },
-  statusBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    backgroundColor: "#FAFBFC",
+    padding: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#ECECEC",
+    marginBottom: 8,
+  },
+  fileIcon: {
+    marginRight: 12,
+  },
+  fileName: { 
+    fontSize: 13, 
+    fontWeight: "600", 
+    color: "#000" 
+  },
+  fileSize: { 
+    fontSize: 13, 
+    color: "#777", 
+    marginTop: 3 
+  },
+
+  // Status Checkbox
+  statusCheckboxContainer: {
     gap: 12,
   },
-  statusBtnActive: {
-    backgroundColor: "#FAFBFC",
+  checkboxItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 0,
   },
-  statusBtnDisabled: {
-    opacity: 0.5,
-    borderColor: "#E5E5EA",
+  checkboxLabel: {
+    fontSize: 15,
+    color: "#333",
+    marginLeft: 12,
+    fontWeight: "500",
   },
-  statusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#FFF",
   },
-  statusBtnText: {
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#FFF",
   },
+
+  // Assignee
+  assigneeItem: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginBottom: 8 
+  },
+  avatar: { 
+    width: 30, 
+    height: 30, 
+    borderRadius: 15, 
+    marginRight: 12 
+  },
+  avatarPlaceholder: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  avatarText: { 
+    color: "#FFF", 
+    fontSize: 18, 
+    fontWeight: "600" 
+  },
+  assigneeName: { 
+    fontSize: 15, 
+    fontWeight: "600", 
+    color: "#000" 
+  },
+  assigneeRole: { 
+    fontSize: 13, 
+    color: Colors.primary, 
+    marginTop: 2 
+  },
+
   // Comments
   commentsHeader: {
     flexDirection: "row",
@@ -1001,6 +963,7 @@ const styles = StyleSheet.create({
     color: "#8E8E93",
     fontWeight: "600",
   },
+
   // ===== MODAL STYLES =====
   modalContainer: {
     flex: 1,

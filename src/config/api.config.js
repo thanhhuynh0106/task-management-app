@@ -1,5 +1,5 @@
 const getApiUrl = () => {
-  return 'http://192.168.19.1:3000/api';
+  return 'http://192.168.234.1:3000/api';
 };
 
 export const API_CONFIG = {
