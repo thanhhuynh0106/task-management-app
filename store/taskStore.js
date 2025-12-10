@@ -128,27 +128,42 @@ const useTaskStore = create((set, get) => ({
   },
 
   /**
-   * Create a new task
-   * @param {Object} taskData - Task creation data
+   * Create a new task 
+   * @param {Object} taskData 
    */
   createTask: async (taskData) => {
     set({ isLoading: true, error: null });
+    
+    if (!taskData.teamId) {
+      const errorMsg = 'Team ID is required to create a task';
+      set({ 
+        error: errorMsg,
+        isLoading: false 
+      });
+      throw new Error(errorMsg);
+    }
+
     try {
       const response = await taskService.createTask(taskData);
       const newTask = response.data;
       
       set(state => ({
         tasks: [newTask, ...state.tasks],
+        teamTasks: taskData.teamId === state.filters.teamId 
+          ? [newTask, ...state.teamTasks]
+          : state.teamTasks,
         isLoading: false
       }));
 
-      // Refresh my tasks since user might be assigned
-      get().fetchMyTasks();
+      if (taskData.assignedTo?.length > 0) {
+        get().fetchMyTasks();
+      }
       
       return response;
     } catch (error) {
+      const msg = error?.response?.data?.error || error.message || 'Failed to create task';
       set({ 
-        error: error?.error || 'Failed to create task',
+        error: msg,
         isLoading: false 
       });
       throw error;

@@ -4,5 +4,5 @@ export { default as useMessageStore } from './messageStore';
 export { default as useNotificationStore } from './notificationStore';
 export { default as useTaskStore } from './taskStore';
 export { default as useTeamStore } from './teamStore';
-export { default as useAuthStore } from './userStore';
+export { default as useAuthStore, default as useUserStore } from './userStore';
 

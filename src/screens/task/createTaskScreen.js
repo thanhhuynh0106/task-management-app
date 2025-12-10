@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import userService from '@/src/services/userService';
 import CalendarIcon from "../../../assets/icons/calendar-2.svg";
 import Category from "../../../assets/icons/category.svg";
 import ChevronDown from "../../../assets/icons/chevron_down.svg";
@@ -24,6 +23,7 @@ import ChevronRight from "../../../assets/icons/chevron_right.svg";
 import Difficulty from "../../../assets/icons/difficulty.svg";
 import Document from "../../../assets/icons/document-2.svg";
 import Priority from "../../../assets/icons/priority.svg";
+import TeamIcon from "../../../assets/icons/team.svg";
 import Upload from "../../../assets/icons/upload.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
 import { useTaskStore } from "../../../store/index";
@@ -64,7 +64,6 @@ const isDateSelectable = (date) => {
   const checkDate = new Date(date);
   checkDate.setHours(0, 0, 0, 0);
   
-  // Chỉ cho phép chọn ngày từ hôm nay trở đi
   return checkDate >= today;
 };
 
@@ -92,6 +91,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState(null);
   const [attachments, setAttachments] = useState([]);
@@ -102,27 +102,30 @@ const CreateTaskScreen = ({ navigation }) => {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [tempDate, setTempDate] = useState(null);
-  const [dateField, setDateField] = useState(""); // "start" or "due
+  const [dateField, setDateField] = useState("");
 
   // Modal States
   const [showMemberModal, setShowMemberModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
   
-  // NEW: Confirmation and Success Dialog States
+  // Dialog States
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Temp selections for modals
+  // Temp selections for modals - KHỞI TẠO RỖNG
   const [tempMembers, setTempMembers] = useState([]);
+  const [tempTeam, setTempTeam] = useState(null);
   const [tempPriority, setTempPriority] = useState(null);
   const [tempDifficulty, setTempDifficulty] = useState(null);
 
-  // Team members
+  // Data states
   const [teamMembers, setTeamMembers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
-
+  const [loadingTeams, setLoadingTeams] = useState(false);
   
   useEffect(() => {
     if (!canManageTasks?.()) {
@@ -135,27 +138,145 @@ const CreateTaskScreen = ({ navigation }) => {
   }, [canManageTasks]);
 
   useEffect(() => {
-    fetchTeamMembers();
-  }, []);
+    if (user?.role === "hr_manager") {
+      fetchTeams();
+    } else if (user?.role === "team_lead" && user?.teamId) {
+      setSelectedTeam({ 
+        _id: user.teamId, 
+        name: user.teamName || "My Team",
+        department: user.teamDepartment || "No department"
+      });
+      fetchTeamMembers(user.teamId);
+    }
+  }, [user]);
 
-  const fetchTeamMembers = async () => {
+  // Fetch all teams for HR Manager
+  const fetchTeams = async () => {
+    setLoadingTeams(true);
+    try {
+      const response = await teamService.getAllTeams();
+      if (response?.data) {
+        setTeams(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+      Alert.alert("Error", "Failed to load teams");
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
+
+  // Fetch team members
+  const fetchTeamMembers = async (teamId) => {
+    if (!teamId) return;
+    
     setLoadingMembers(true);
     try {
       let response;
-
+      
       if (user?.role === "hr_manager") {
-        response = await userService.getAllUsers();
-      } else if (user?.role === "team_lead" && user?.teamId) {
-        response = await teamService.getTeamMembers(user.teamId);
+        response = await teamService.getTeamMembers(teamId);
+      } else if (user?.role === "team_lead") {
+        response = await teamService.getTeamMembers(teamId);
       }
+      
       if (response?.data) {
         setTeamMembers(response.data);
+        // Reset selected members khi team thay đổi
+        setSelectedMembers([]);
+        setTempMembers([]);
       }
     } catch (error) {
       console.error("Failed to fetch team members:", error);
       Alert.alert("Error", "Failed to load team members");
     } finally {
       setLoadingMembers(false);
+    }
+  };
+
+  // Handle team selection - FIXED: Đơn giản hóa
+  const handleTeamSelect = (team) => {
+    setTempTeam(team); // Chỉ set team được chọn
+  };
+
+  const confirmTeamSelection = () => {
+    if (!tempTeam) return;
+    
+    setSelectedTeam(tempTeam);
+    setShowTeamModal(false);
+    
+    // Load members of selected team
+    if (tempTeam?._id) {
+      fetchTeamMembers(tempTeam._id);
+    }
+  };
+
+  // Modal handlers
+  const openMemberModal = () => {
+    if (teamMembers.length === 0) {
+      Alert.alert("No Team Selected", "Please select a team first to view members");
+      return;
+    }
+    setTempMembers([...selectedMembers]);
+    setShowMemberModal(true);
+  };
+
+  const openPriorityModal = () => {
+    setTempPriority(selectedPriority);
+    setShowPriorityModal(true);
+  };
+
+  const openDifficultyModal = () => {
+    setTempDifficulty(selectedDifficulty);
+    setShowDifficultyModal(true);
+  };
+
+  // FIXED: Selection handlers - mỗi modal có cách xử lý riêng
+  const handlePrioritySelect = (priority) => {
+    // SINGLE SELECT: chỉ chọn một priority
+    setTempPriority(priority);
+  };
+
+  const handleDifficultySelect = (difficulty) => {
+    // SINGLE SELECT: chỉ chọn một difficulty
+    setTempDifficulty(difficulty);
+  };
+
+  const handleMemberSelect = (member) => {
+    // MULTI SELECT: có thể chọn nhiều members
+    setTempMembers(prev => {
+      const exists = prev.find(m => m._id === member._id);
+      if (exists) {
+        return prev.filter(m => m._id !== member._id);
+      } else {
+        return [...prev, member];
+      }
+    });
+  };
+
+  // FIXED: Check selection - sửa logic so sánh
+  const isItemSelected = (item, selectedItems, multiSelect = false) => {
+    if (!item || !selectedItems) return false;
+    
+    if (multiSelect && Array.isArray(selectedItems)) {
+      // For members array
+      return selectedItems.some(selected => 
+        selected && selected._id === item._id
+      );
+    } else {
+      // For single selection (team, priority, difficulty)
+      if (!selectedItems) return false;
+      
+      // Check by id or _id
+      if (selectedItems.id && item.id) {
+        return selectedItems.id === item.id;
+      }
+      if (selectedItems._id && item._id) {
+        return selectedItems._id === item._id;
+      }
+      
+      // Direct object comparison
+      return selectedItems === item;
     }
   };
 
@@ -212,7 +333,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const handleAttachmentPress = async (index) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',                    // Allow all file types
+        type: '*/*',
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -229,7 +350,6 @@ const CreateTaskScreen = ({ navigation }) => {
         const fileName = file.name || `file-${Date.now()}`;
         const fileSize = file.size || 0;
   
-        // 1. Check file size (max 5MB)
         if (fileSize > 5 * 1024 * 1024) {
           Alert.alert(
             "File Too Large",
@@ -239,13 +359,11 @@ const CreateTaskScreen = ({ navigation }) => {
           continue;
         }
   
-        // 2. Block dangerous extensions
         if (isFileBlocked(fileName)) {
           blockedFiles.push(fileName);
           continue;
         }
   
-        // 3. File passed → add to list
         validFiles.push({
           id: `${Date.now()}-${Math.random()}`,
           uri: file.uri,
@@ -255,7 +373,6 @@ const CreateTaskScreen = ({ navigation }) => {
         });
       }
   
-      // Show alert if any file was blocked
       if (blockedFiles.length > 0) {
         Alert.alert(
           "Restricted Files",
@@ -264,7 +381,6 @@ const CreateTaskScreen = ({ navigation }) => {
         );
       }
   
-      // Check total attachment limit (max 3)
       const newTotal = attachments.length + validFiles.length;
       if (newTotal > 3) {
         const canAdd = 3 - attachments.length;
@@ -273,11 +389,9 @@ const CreateTaskScreen = ({ navigation }) => {
           `You can only attach up to 3 files.\nYou currently have ${attachments.length}, so only ${canAdd} more ${canAdd === 1 ? 'file is' : 'files are'} allowed.`,
           [{ text: "OK" }]
         );
-        // Trim to allowed number
         validFiles.splice(canAdd);
       }
   
-      // Add valid files
       if (validFiles.length > 0) {
         setAttachments(prev => [...prev, ...validFiles]);
       }
@@ -300,6 +414,12 @@ const CreateTaskScreen = ({ navigation }) => {
 
   const validateTaskData = () => {
     if (!taskTitle.trim()) return { valid: false, message: 'Task title is required' };
+    
+    const teamId = selectedTeam?._id || user?.teamId;
+    if (!teamId) {
+      return { valid: false, message: 'Team selection is required' };
+    }
+    
     if (selectedMembers.length === 0) return { valid: false, message: 'At least one assignee is required' };
     if (!startDate) return { valid: false, message: 'Start date is required' };
     if (!dueDate) return { valid: false, message: 'Due date is required' };
@@ -373,7 +493,6 @@ const CreateTaskScreen = ({ navigation }) => {
       return;
     }
     
-    // Kiểm tra ngày có được chọn từ hôm nay trở đi không
     if (!isDateSelectable(tempDate)) {
       Alert.alert("Invalid Date", "Please select a date from today onwards");
       return;
@@ -405,7 +524,7 @@ const CreateTaskScreen = ({ navigation }) => {
     </View>
   );
 
-  // === CALENDAR MODAL (giống PersonalData) ===
+  // === CALENDAR MODAL ===
   const renderCalendarModal = () => (
     <Modal visible={showCalendarModal} transparent animationType="slide">
       <Pressable style={styles.modalOverlay} onPress={() => setShowCalendarModal(false)}>
@@ -474,17 +593,105 @@ const CreateTaskScreen = ({ navigation }) => {
     </Modal>
   );
 
+  // FIXED: Modal render với logic đơn giản
+  const renderModal = ({
+    visible,
+    onClose,
+    onConfirm,
+    items,
+    selectedItems,
+    onSelectItem,
+    title,
+    renderItem,
+    multiSelect = false
+  }) => {
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <Pressable style={styles.modalOverlay} onPress={onClose}>
+          <Pressable
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{title}</Text>
+              {multiSelect && Array.isArray(selectedItems) && selectedItems.length > 0 && (
+                <Text style={styles.modalSubtitle}>
+                  {selectedItems.length} selected
+                </Text>
+              )}
+              <View style={styles.modalDivider} />
+            </View>
+
+            {(loadingMembers || loadingTeams) ? (
+              <View style={styles.modalLoadingContainer}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : (
+              <ScrollView
+                style={styles.modalScroll}
+                showsVerticalScrollIndicator={false}
+              >
+                {items.map((item) => {
+                  const isSelected = isItemSelected(item, selectedItems, multiSelect);
+                  return (
+                    <TouchableOpacity
+                      key={item.id || item._id}
+                      style={[
+                        styles.modalItem,
+                        isSelected && styles.modalItemSelected,
+                      ]}
+                      onPress={() => onSelectItem(item)}
+                    >
+                      {renderItem(item, isSelected)}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonClose]}
+                onPress={onClose}
+              >
+                <Text style={styles.modalButtonTextClose}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={onConfirm}
+                disabled={loadingMembers || loadingTeams}
+              >
+                <Text style={styles.modalButtonTextConfirm}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    );
+  };
+
   // NEW: Actual create task function
   const handleConfirmCreateTask = async () => {
     setShowConfirmDialog(false);
     setIsUploading(true);
   
     try {
+      const teamId = selectedTeam?._id || user?.teamId;
+      
+      if (!teamId) {
+        throw new Error("Team ID is required");
+      }
+      
       const taskPayload = {
         title: taskTitle.trim(),
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map((m) => m._id),
-        teamId: user?.teamId,
+        teamId: teamId,
         priority: selectedPriority?.id || "medium",
         difficulty: selectedDifficulty?.id || "medium",
         attachments: [],
@@ -499,7 +706,6 @@ const CreateTaskScreen = ({ navigation }) => {
         await uploadAttachments(attachments, newTaskId);
       }
   
-      // Show success dialog
       setIsUploading(false);
       setShowSuccessDialog(true);
     } catch (error) {
@@ -509,25 +715,14 @@ const CreateTaskScreen = ({ navigation }) => {
     }
   };
 
-  const toggleMemberSelection = (member) => {
-    setTempMembers(prev => {
-      const exists = prev.find(m => m._id === member._id);
-      if (exists) {
-        return prev.filter(m => m._id !== member._id);
-      } else {
-        return [...prev, member];
-      }
-    });
-  };
-
-  const isMemberSelected = (member, list) => {
-    return list.some(m => m._id === member._id);
-  };
-
-  const renderSelector = (label, value, placeholder, onPress, Icon) => (
+  const renderSelector = (label, value, placeholder, onPress, Icon, disabled = false) => (
     <View style={styles.selectorContainer}>
       <Text style={styles.selectorLabel}>{label}</Text>
-      <TouchableOpacity style={styles.selector} onPress={onPress}>
+      <TouchableOpacity 
+        style={[styles.selector, disabled && styles.selectorDisabled]} 
+        onPress={onPress}
+        disabled={disabled}
+      >
         <View style={styles.selectorLeft}>
           <Icon width={20} height={20} />
           <Text style={[styles.selectorText, !value && styles.placeholderText]}>
@@ -539,87 +734,7 @@ const CreateTaskScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderBottomModal = (
-    visible,
-    onClose,
-    onConfirm,
-    items,
-    selectedItems,
-    onSelectItem,
-    title,
-    renderItem,
-    multiSelect = false
-  ) => (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable
-          style={styles.modalContent}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            {multiSelect && selectedItems.length > 0 && (
-              <Text style={styles.modalSubtitle}>
-                {selectedItems.length} selected
-              </Text>
-            )}
-            <View style={styles.modalDivider} />
-          </View>
-
-          {loadingMembers ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.modalScroll}
-              showsVerticalScrollIndicator={false}
-            >
-              {items.map((item) => (
-                <TouchableOpacity
-                  key={item.id || item._id}
-                  style={[
-                    styles.modalItem,
-                    (multiSelect
-                      ? isMemberSelected(item, selectedItems)
-                      : selectedItems?.id === item.id) && styles.modalItemSelected,
-                  ]}
-                  onPress={() => onSelectItem(item)}
-                >
-                  {renderItem(item, multiSelect
-                    ? isMemberSelected(item, selectedItems)
-                    : selectedItems?.id === item.id)}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonClose]}
-              onPress={onClose}
-            >
-              <Text style={styles.modalButtonTextClose}>Close</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalButtonConfirm]}
-              onPress={onConfirm}
-              disabled={loadingMembers}
-            >
-              <Text style={styles.modalButtonTextConfirm}>Confirm</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-
-  // NEW: Confirmation Dialog (Hình 1)
+  // NEW: Confirmation Dialog
   const renderConfirmDialog = () => (
     <Modal
       visible={showConfirmDialog}
@@ -662,7 +777,7 @@ const CreateTaskScreen = ({ navigation }) => {
     </Modal>
   );
 
-  // NEW: Success Dialog (Hình 2)
+  // NEW: Success Dialog
   const renderSuccessDialog = () => (
     <Modal
       visible={showSuccessDialog}
@@ -810,18 +925,30 @@ const CreateTaskScreen = ({ navigation }) => {
             {renderDateSelector("Start Date", startDate, "start")}
             {renderDateSelector("Due Date", dueDate, "due")}
 
-            {/* Assign To */}
+            {/* Team Selection - chỉ hiển thị cho HR Manager */}
+            {user?.role === "hr_manager" && (
+              renderSelector(
+                "Team",
+                selectedTeam?.name,
+                "Select team",
+                () => {
+                  setTempTeam(selectedTeam);
+                  setShowTeamModal(true);
+                },
+                TeamIcon
+              )
+            )}
+
+            {/* Assign To - chỉ enable khi đã chọn team (HR) hoặc có team (Team Lead) */}
             {renderSelector(
               "Assign to",
               selectedMembers.length > 0
                 ? `${selectedMembers.length} member${selectedMembers.length > 1 ? 's' : ''} selected`
                 : null,
-              "Select members",
-              () => {
-                setTempMembers(selectedMembers);
-                setShowMemberModal(true);
-              },
-              UserIcon
+              teamMembers.length > 0 ? "Select members" : "Select team first",
+              openMemberModal,
+              UserIcon,
+              teamMembers.length === 0
             )}
 
             {/* Priority */}
@@ -829,10 +956,7 @@ const CreateTaskScreen = ({ navigation }) => {
               "Priority",
               selectedPriority?.name,
               "Select priority",
-              () => {
-                setTempPriority(selectedPriority);
-                setShowPriorityModal(true);
-              },
+              openPriorityModal,
               Priority
             )}
 
@@ -841,10 +965,7 @@ const CreateTaskScreen = ({ navigation }) => {
               "Difficulty",
               selectedDifficulty?.name,
               "Select difficulty",
-              () => {
-                setTempDifficulty(selectedDifficulty);
-                setShowDifficultyModal(true);
-              },
+              openDifficultyModal,
               Difficulty
             )}
           </View>
@@ -862,28 +983,54 @@ const CreateTaskScreen = ({ navigation }) => {
         />
       </View>
 
+      {/* Team Modal - chỉ cho HR Manager */}
+      {renderModal({
+        visible: showTeamModal,
+        onClose: () => setShowTeamModal(false),
+        onConfirm: confirmTeamSelection,
+        items: teams,
+        selectedItems: tempTeam,
+        onSelectItem: handleTeamSelect, // SINGLE SELECT
+        title: "Select Team",
+        renderItem: (item, isSelected) => (
+          <View style={styles.modalItemContent}>
+            <View>
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
+                {item.name}
+              </Text>
+              <Text style={styles.itemSubtext}>
+               {item.memberIds.length || 0} members
+              </Text>
+            </View>
+            {isSelected && (
+              <View style={styles.selectedIndicator}>
+                <Text style={styles.checkmark}>✓</Text>
+              </View>
+            )}
+          </View>
+        )
+      })}
+
       {/* Member Modal */}
-      {renderBottomModal(
-        showMemberModal,
-        () => setShowMemberModal(false),
-        () => {
+      {renderModal({
+        visible: showMemberModal,
+        onClose: () => setShowMemberModal(false),
+        onConfirm: () => {
           setSelectedMembers(tempMembers);
           setShowMemberModal(false);
         },
-        teamMembers,
-        tempMembers,
-        toggleMemberSelection,
-        "Select Members",
-        (item, isSelected) => (
+        items: teamMembers,
+        selectedItems: tempMembers,
+        onSelectItem: handleMemberSelect, // MULTI SELECT
+        title: "Select Members",
+        renderItem: (item, isSelected) => (
           <View style={styles.modalItemContent}>
             <View>
-              <Text
-                style={[styles.itemName, isSelected && styles.itemNameSelected]}
-              >
-                {item.profile?.fullName || item.email}
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
+                {item.profile?.fullName || item.email || "Unknown"}
               </Text>
               <Text style={styles.itemSubtext}>
-                {item.role} • {item.department || 'No department'}
+                {item.role || 'employee'} • {item.profile.department || 'No department'}
               </Text>
             </View>
             {isSelected && (
@@ -893,30 +1040,26 @@ const CreateTaskScreen = ({ navigation }) => {
             )}
           </View>
         ),
-        true
-      )}
+        multiSelect: true
+      })}
 
       {/* Priority Modal */}
-      {renderBottomModal(
-        showPriorityModal,
-        () => setShowPriorityModal(false),
-        () => {
+      {renderModal({
+        visible: showPriorityModal,
+        onClose: () => setShowPriorityModal(false),
+        onConfirm: () => {
           setSelectedPriority(tempPriority);
           setShowPriorityModal(false);
         },
-        PRIORITIES,
-        tempPriority,
-        setTempPriority,
-        "Select Priority",
-        (item, isSelected) => (
+        items: PRIORITIES,
+        selectedItems: tempPriority,
+        onSelectItem: handlePrioritySelect, // SINGLE SELECT
+        title: "Select Priority",
+        renderItem: (item, isSelected) => (
           <View style={styles.modalItemContent}>
             <View style={styles.priorityRow}>
-              <View
-                style={[styles.priorityDot, { backgroundColor: item.color }]}
-              />
-              <Text
-                style={[styles.itemName, isSelected && styles.itemNameSelected]}
-              >
+              <View style={[styles.priorityDot, { backgroundColor: item.color }]} />
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
                 {item.name}
               </Text>
             </View>
@@ -927,36 +1070,38 @@ const CreateTaskScreen = ({ navigation }) => {
             )}
           </View>
         )
-      )}
+      })}
 
       {/* Difficulty Modal */}
-      {renderBottomModal(
-        showDifficultyModal,
-        () => setShowDifficultyModal(false),
-        () => {
+      {renderModal({
+        visible: showDifficultyModal,
+        onClose: () => setShowDifficultyModal(false),
+        onConfirm: () => {
           setSelectedDifficulty(tempDifficulty);
           setShowDifficultyModal(false);
         },
-        DIFFICULTIES,
-        tempDifficulty,
-        setTempDifficulty,
-        "Select Difficulty",
-        (item, isSelected) => (
+        items: DIFFICULTIES,
+        selectedItems: tempDifficulty,
+        onSelectItem: handleDifficultySelect, // SINGLE SELECT
+        title: "Select Difficulty",
+        renderItem: (item, isSelected) => (
           <View style={styles.modalItemContent}>
             <View style={styles.difficultyRow}>
               <Text style={styles.difficultyLevel}>{item.level}</Text>
-              <Text
-                style={[styles.itemName, isSelected && styles.itemNameSelected]}
-              >
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
                 {item.name}
               </Text>
             </View>
-            {isSelected && <View style={styles.selectedIndicator} />}
+            {isSelected && (
+              <View style={styles.selectedIndicator}>
+                <Text style={styles.checkmark}>✓</Text>
+              </View>
+            )}
           </View>
         )
-      )}
+      })}
+      
       {renderCalendarModal()} 
-      {/* NEW: Dialogs */}
       {renderConfirmDialog()}
       {renderSuccessDialog()}
     </SafeAreaView>
@@ -1008,6 +1153,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E8E8E8",
+  },
+  selectorDisabled: {
+    backgroundColor: "#F5F5F5",
+    opacity: 0.6,
   },
   selectorLeft: {
     flexDirection: "row",
@@ -1173,6 +1322,11 @@ const styles = StyleSheet.create({
   modalScroll: {
     maxHeight: 400,
   },
+  modalLoadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   modalItem: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -1272,7 +1426,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
   },
-  // NEW: Dialog Styles
   dialogOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
@@ -1370,7 +1523,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.primary,
   },
-  // Calendar Styles - ĐỒNG NHẤT HÌNH TRÒN
   calendarHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -1413,7 +1565,7 @@ const styles = StyleSheet.create({
   dayCircle: {
     width: 36,
     height: 36,
-    borderRadius: 18, // HÌNH TRÒN
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
