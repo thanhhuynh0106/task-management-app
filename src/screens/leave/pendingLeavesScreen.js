@@ -172,7 +172,7 @@ const PendingLeavesScreen = ({ navigation }) => {
   const renderLeaveCard = (item) => {
     const startDateFormatted = formatDate(item.startDate);
     const endDateFormatted = formatDate(item.endDate);
-    const employeeName = item.userId?.name || item.userId?.email || "Unknown Employee";
+    const employeeName = item.userId?.profile?.fullName || item.userId?.email || "Unknown Employee";
 
     return (
       <Pressable
@@ -183,8 +183,8 @@ const PendingLeavesScreen = ({ navigation }) => {
         <View style={styles.employeeSection}>
           <Avatar 
             name={employeeName} 
-            width={48} 
-            height={48} 
+            width={40} 
+            height={40} 
           />
           <View style={styles.employeeInfo}>
             <Text style={styles.employeeName}>{employeeName}</Text>
@@ -205,8 +205,8 @@ const PendingLeavesScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.leaveRow}>
-            <Text style={styles.leaveLabel}>Leave Date</Text>
-            <Text style={styles.leaveLabel}>Total Leave</Text>
+            <Text style={styles.leaveLabel}>Leave date</Text>
+            <Text style={styles.leaveLabel}>Total leave</Text>
           </View>
           <View style={styles.leaveRow}>
             <Text style={styles.leaveValue}>
@@ -351,10 +351,9 @@ const PendingLeavesScreen = ({ navigation }) => {
                 <>
                   <Text style={styles.modalTitle}>Leave Request Details</Text>
                   
-                  {/* Employee Info */}
                   <View style={styles.modalEmployeeSection}>
                     <Avatar 
-                      name={selectedLeave.userId?.name || selectedLeave.userId?.email || "Unknown"} 
+                      name={selectedLeave.userId?.profile?.fullName|| selectedLeave.userId?.email || "Unknown"} 
                       width={56} 
                       height={56} 
                     />
@@ -584,22 +583,23 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   employeeName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 4,
   },
   employeeEmail: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#666666",
   },
   leaveDetails: {
-    backgroundColor: Colors.gray,
-    padding: 12,
-    borderRadius: 12,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderGray,
+    // backgroundColor: Colors.gray,
+    // padding: 12,
+    // borderRadius: 12,
+    // gap: 8,
+    // borderWidth: 1,
+    // borderColor: Colors.borderGray,
+    paddingHorizontal: 12
   },
   leaveHeader: {
     flexDirection: "row",
@@ -632,12 +632,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   leaveLabel: {
-    fontSize: 14,
+    marginTop: 4,
+    fontSize: 13,
     color: "#666666",
     fontWeight: "400",
   },
   leaveValue: {
-    fontSize: 14,
+    marginTop: 4,
+    fontSize: 13,
     color: "#000000",
     fontWeight: "600",
   },
@@ -648,14 +650,14 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderGray,
   },
   reasonLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#666666",
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#212121ff",
     marginBottom: 4,
   },
   reasonText: {
     fontSize: 13,
-    color: "#000000",
+    color: "#4d4d4dff",
     lineHeight: 18,
   },
   actionButtons: {
@@ -771,7 +773,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   modalEmployeeName: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
     color: "#000000",
     marginBottom: 4,

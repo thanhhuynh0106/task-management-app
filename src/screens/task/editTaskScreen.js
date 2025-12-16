@@ -30,10 +30,14 @@ import UserIcon from "../../../assets/icons/user_delegation.svg";
 import { useTaskStore } from "../../../store/index";
 import AppButton from "../../components/appButton";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
+import SubTaskList from "../../components/task/subtaskList";
+import AddSubtaskInput from "../../components/task/addSubtaskInput";
+import SubtaskProgress from "../../components/task/subtaskProgress";
 import apiClient from "../../services/api";
 import { teamService } from "../../services/index";
 import Colors from "../../styles/color";
 import Folder from "../../../assets/icons/folder.svg";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const PRIORITIES = [
   { id: "high", name: "High", color: "#FF3B30" },
@@ -62,14 +66,23 @@ const EditTaskScreen = () => {
   const { taskId } = route.params;
 
   const { user } = useAuth();
-  const { selectedTask, fetchTaskById, updateTask, isLoading } = useTaskStore();
+  const { 
+    selectedTask, 
+    fetchTaskById, 
+    updateTask, 
+    isLoading,
+    createSubtask,
+    toggleSubtask,
+    deleteSubtask 
+  } = useTaskStore();
+
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
   // Form States
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [selectedPriority, setSelectedPriority] = useState(PRIORITIES[1]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(DIFFICULTIES[1]);
   const [startDate, setStartDate] = useState(null);
   const [dueDate, setDueDate] = useState(null);
 
@@ -87,13 +100,11 @@ const EditTaskScreen = () => {
   // Modal States
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
-  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Temp selections
   const [tempMembers, setTempMembers] = useState([]);
   const [tempPriority, setTempPriority] = useState(null);
-  const [tempDifficulty, setTempDifficulty] = useState(null);
 
   // Team members
   const [teamMembers, setTeamMembers] = useState([]);
@@ -121,10 +132,6 @@ const EditTaskScreen = () => {
       // Priority
       const priority = PRIORITIES.find(p => p.id === selectedTask.priority) || PRIORITIES[1];
       setSelectedPriority(priority);
-
-      // Difficulty
-      const difficulty = DIFFICULTIES.find(d => d.id === selectedTask.difficulty) || DIFFICULTIES[1];
-      setSelectedDifficulty(difficulty);
 
       // Dates - Format to display string
       if (selectedTask.startDate) {
@@ -389,7 +396,7 @@ const EditTaskScreen = () => {
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map(m => m._id),
         priority: selectedPriority?.id || "medium",
-        difficulty: selectedDifficulty?.id || 2,
+        difficulty: "medium", // Default difficulty
         startDate: parsedStartDate.toISOString(),
         dueDate: parsedDueDate.toISOString(),
         removedAttachments: removedAttachmentIds,
@@ -407,6 +414,47 @@ const EditTaskScreen = () => {
     } catch (error) {
       Alert.alert("Error", error?.error || error?.message || "Failed to update task");
     }
+  };
+
+  // Subtask handlers
+  const handleAddSubtask = async (title) => {
+    setIsAddingSubtask(true);
+    try {
+      await createSubtask(taskId, title);
+    } catch (error) {
+      Alert.alert("Error", error?.error || "Failed to add subtask");
+    } finally {
+      setIsAddingSubtask(false);
+    }
+  };
+
+  const handleToggleSubtask = async (subtaskId) => {
+    try {
+      await toggleSubtask(taskId, subtaskId);
+    } catch (error) {
+      Alert.alert("Error", error?.error || "Failed to toggle subtask");
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId) => {
+    Alert.alert(
+      "Delete Subtask",
+      "Are you sure you want to delete this subtask?",
+      [
+        { text: "Cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSubtask(taskId, subtaskId);
+            } catch (error) {
+              Alert.alert("Error", error?.error || "Failed to delete subtask");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const openCalendar = (field) => {
@@ -761,17 +809,29 @@ const EditTaskScreen = () => {
               Priority
             )}
 
-            {/* Difficulty */}
-            {renderSelector(
-              "Difficulty",
-              selectedDifficulty?.name,
-              "Select difficulty",
-              () => {
-                setTempDifficulty(selectedDifficulty);
-                setShowDifficultyModal(true);
-              },
-              Difficulty
-            )}
+            {/* Subtasks Section */}
+            <View style={styles.selectorContainer}>
+              <View style={styles.subtaskHeader}>
+                <MaterialCommunityIcons name="checkbox-multiple-marked-outline" size={20} color={Colors.primary} />
+                <Text style={styles.selectorLabel}>Subtasks</Text>
+              </View>
+              
+              {selectedTask?.subTasks && selectedTask.subTasks.length > 0 && (
+                <SubtaskProgress subtasks={selectedTask.subTasks} showLabel={true} />
+              )}
+
+              <SubTaskList 
+                subtasks={selectedTask?.subTasks || []}
+                onSubtaskToggle={handleToggleSubtask}
+                onSubtaskDelete={handleDeleteSubtask}
+                editable={true}
+              />
+              
+              <AddSubtaskInput 
+                onAddSubtask={handleAddSubtask}
+                isLoading={isAddingSubtask}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -844,31 +904,6 @@ const EditTaskScreen = () => {
         )
       )}
 
-      {/* Difficulty Modal */}
-      {renderBottomModal(
-        showDifficultyModal,
-        () => setShowDifficultyModal(false),
-        () => {
-          setSelectedDifficulty(tempDifficulty);
-          setShowDifficultyModal(false);
-        },
-        DIFFICULTIES,
-        tempDifficulty,
-        setTempDifficulty,
-        "Select Difficulty",
-        (item, isSelected) => (
-          <View style={styles.modalItemContent}>
-            <View style={styles.difficultyRow}>
-              <Text style={styles.difficultyLevel}>{item.level}</Text>
-              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
-                {item.name}
-              </Text>
-            </View>
-            {isSelected && <View style={styles.selectedIndicator}><Text style={styles.checkmark}>✓</Text></View>}
-          </View>
-        )
-      )}
-
       {renderCalendarModal()}
       {renderConfirmDialog()}
     </SafeAreaView>
@@ -884,6 +919,7 @@ const styles = StyleSheet.create({
   contentWrapper: { backgroundColor: Colors.white, borderRadius: 12, padding: 16 },
   content: { gap: 20 },
   selectorContainer: { gap: 8 },
+  subtaskHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   selectorLabel: { fontSize: 16, fontWeight: "600", color: "#000000" },
   selectorHint: { fontSize: 12, color: "#999999", marginBottom: 4 },
   selector: {

@@ -206,6 +206,83 @@ const taskService = {
       throw error;
     }
   },
+
+  // ========== SUBTASK OPERATIONS ==========
+
+  /**
+   * Get all subtasks for a task
+   * @param {string} taskId
+   * @returns {Promise}
+   */
+  getSubtasks: async (taskId) => {
+    try {
+      const response = await apiClient.get(`/tasks/${taskId}/subtasks`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new subtask
+   * @param {string} taskId
+   * @param {string} title - Subtask title
+   * @returns {Promise}
+   */
+  createSubtask: async (taskId, title) => {
+    try {
+      const response = await apiClient.post(`/tasks/${taskId}/subtasks`, { title });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Toggle subtask completion status
+   * @param {string} taskId
+   * @param {string} subtaskId
+   * @returns {Promise}
+   */
+  toggleSubtask: async (taskId, subtaskId) => {
+    try {
+      const response = await apiClient.put(`/tasks/${taskId}/subtasks/${subtaskId}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update subtask (title and/or status)
+   * @param {string} taskId
+   * @param {string} subtaskId
+   * @param {Object} updateData - { title, isCompleted }
+   * @returns {Promise}
+   */
+  updateSubtask: async (taskId, subtaskId, updateData) => {
+    try {
+      const response = await apiClient.patch(`/tasks/${taskId}/subtasks/${subtaskId}`, updateData);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a subtask
+   * @param {string} taskId
+   * @param {string} subtaskId
+   * @returns {Promise}
+   */
+  deleteSubtask: async (taskId, subtaskId) => {
+    try {
+      const response = await apiClient.delete(`/tasks/${taskId}/subtasks/${subtaskId}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default taskService;

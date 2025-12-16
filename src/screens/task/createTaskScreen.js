@@ -28,11 +28,15 @@ import UserIcon from "../../../assets/icons/user_delegation.svg";
 import { useTaskStore } from "../../../store/index";
 import AppButton from "../../components/appButton";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
+import SubTaskList from "../../components/task/subtaskList";
+import AddSubtaskInput from "../../components/task/addSubtaskInput";
+import SubtaskProgress from "../../components/task/subtaskProgress";
 import apiClient from "../../services/api";
 import { teamService } from "../../services/index";
 import Colors from "../../styles/color";
 import Confirm from "../../../assets/icons/confirm.svg";
 import Folder from "../../../assets/icons/folder.svg";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const PRIORITIES = [
   { id: "high", name: "High", color: "#FF3B30" },
@@ -64,10 +68,12 @@ const CreateTaskScreen = ({ navigation }) => {
   const [taskDescription, setTaskDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [selectedPriority, setSelectedPriority] = useState(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [dueDate, setDueDate] = useState(null);
+  
+  // Subtask States
+  const [subtasks, setSubtasks] = useState([]);
 
   // Calendar Modal
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -78,7 +84,6 @@ const CreateTaskScreen = ({ navigation }) => {
   // Modal States
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
-  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
   
   // NEW: Confirmation and Success Dialog States
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -88,7 +93,6 @@ const CreateTaskScreen = ({ navigation }) => {
   // Temp selections for modals
   const [tempMembers, setTempMembers] = useState([]);
   const [tempPriority, setTempPriority] = useState(null);
-  const [tempDifficulty, setTempDifficulty] = useState(null);
 
   // Team members
   const [teamMembers, setTeamMembers] = useState([]);
@@ -286,6 +290,26 @@ const CreateTaskScreen = ({ navigation }) => {
     setAttachments(attachments.filter((attachment) => attachment.id !== id));
   };
 
+  // Subtask handlers
+  const handleAddSubtask = (title) => {
+    const newSubtask = {
+      id: `temp-${Date.now()}`, // Temporary ID for local state
+      title: title.trim(),
+      isCompleted: false,
+    };
+    setSubtasks([...subtasks, newSubtask]);
+  };
+
+  const handleToggleSubtask = (subtaskId) => {
+    setSubtasks(subtasks.map(st => 
+      st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st
+    ));
+  };
+
+  const handleDeleteSubtask = (subtaskId) => {
+    setSubtasks(subtasks.filter(st => st.id !== subtaskId));
+  };
+
   const validateTaskData = () => {
     if (!taskTitle.trim()) return { valid: false, message: 'Task title is required' };
     if (selectedMembers.length === 0) return { valid: false, message: 'At least one assignee is required' };
@@ -440,7 +464,7 @@ const CreateTaskScreen = ({ navigation }) => {
         assignedTo: selectedMembers.map((m) => m._id),
         teamId: user?.teamId,
         priority: selectedPriority?.id || "medium",
-        difficulty: selectedDifficulty?.id || 2,
+        difficulty: "medium", // Default difficulty
         attachments: [],
         startDate: startDate || null,
         dueDate: dueDate || null,
@@ -449,8 +473,17 @@ const CreateTaskScreen = ({ navigation }) => {
       const createResponse = await createTask(taskPayload);
       const newTaskId = createResponse.data._id || createResponse._id;
   
+      // Upload attachments if any
       if (attachments.length > 0) {
         await uploadAttachments(attachments, newTaskId);
+      }
+
+      // Create subtasks if any
+      if (subtasks.length > 0) {
+        const subtaskPromises = subtasks.map(subtask => 
+          apiClient.post(`/tasks/${newTaskId}/subtasks`, { title: subtask.title })
+        );
+        await Promise.all(subtaskPromises);
       }
   
       // Show success dialog
@@ -792,17 +825,32 @@ const CreateTaskScreen = ({ navigation }) => {
               Priority
             )}
 
-            {/* Difficulty */}
-            {renderSelector(
-              "Difficulty",
-              selectedDifficulty?.name,
-              "Select difficulty",
-              () => {
-                setTempDifficulty(selectedDifficulty);
-                setShowDifficultyModal(true);
-              },
-              Difficulty
-            )}
+            {/* Subtasks Section */}
+            <View style={styles.selectorContainer}>
+              <View style={styles.subtaskHeader}>
+                <MaterialCommunityIcons name="checkbox-multiple-marked-outline" size={20} color={Colors.primary} />
+                <Text style={styles.selectorLabel}>Subtasks (Optional)</Text>
+              </View>
+              <Text style={styles.selectorHint}>
+                Break down your task into smaller steps
+              </Text>
+              
+              {subtasks.length > 0 && (
+                <SubtaskProgress subtasks={subtasks} showLabel={true} />
+              )}
+
+              <SubTaskList 
+                subtasks={subtasks}
+                onSubtaskToggle={handleToggleSubtask}
+                onSubtaskDelete={handleDeleteSubtask}
+                editable={true}
+              />
+              
+              <AddSubtaskInput 
+                onAddSubtask={handleAddSubtask}
+                isLoading={false}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -885,32 +933,6 @@ const CreateTaskScreen = ({ navigation }) => {
         )
       )}
 
-      {/* Difficulty Modal */}
-      {renderBottomModal(
-        showDifficultyModal,
-        () => setShowDifficultyModal(false),
-        () => {
-          setSelectedDifficulty(tempDifficulty);
-          setShowDifficultyModal(false);
-        },
-        DIFFICULTIES,
-        tempDifficulty,
-        setTempDifficulty,
-        "Select Difficulty",
-        (item, isSelected) => (
-          <View style={styles.modalItemContent}>
-            <View style={styles.difficultyRow}>
-              <Text style={styles.difficultyLevel}>{item.level}</Text>
-              <Text
-                style={[styles.itemName, isSelected && styles.itemNameSelected]}
-              >
-                {item.name}
-              </Text>
-            </View>
-            {isSelected && <View style={styles.selectedIndicator} />}
-          </View>
-        )
-      )}
       {renderCalendarModal()} 
       {/* NEW: Dialogs */}
       {renderConfirmDialog()}
@@ -943,6 +965,11 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   selectorContainer: {
+    gap: 8,
+  },
+  subtaskHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   selectorLabel: {

@@ -114,6 +114,7 @@ const TaskScreen = () => {
     return {
       id: task._id,
       name: task.title,
+      description: task.description || "",
       endDate: task.dueDate 
         ? new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) 
         : "No date",
@@ -187,6 +188,7 @@ const TaskScreen = () => {
             >
               <CardTask 
                 name={formattedTask.name}
+                description={formattedTask.description}
                 endDate={formattedTask.endDate}
                 comment={formattedTask.comment}
                 progress={formattedTask.progress}

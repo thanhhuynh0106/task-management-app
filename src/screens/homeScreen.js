@@ -1,4 +1,3 @@
-// screens/homeScreen.js
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
@@ -16,21 +15,19 @@ const HomeScreen = ({ navigation }) => {
   const { fetchMyTasks, fetchTaskStats } = useTaskStore();
   const { fetchUnreadCount, fetchNotifications } = useNotificationStore();
 
-  // Fetch data khi screen focus
   useFocusEffect(
     React.useCallback(() => {
       fetchHomeData();
 
-      // Auto-refresh mỗi 60 giây
       const interval = setInterval(() => {
-        fetchHomeData(true); // Silent refresh
+        fetchHomeData(true);
       }, 60000);
       
       return () => clearInterval(interval);
     }, [])
   );
 
-  // Fetch unread count khi mount
+
   useEffect(() => {
     fetchUnreadCount();
   }, []);

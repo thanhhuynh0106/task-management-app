@@ -29,14 +29,9 @@ const RootNavigator = () => {
           headerShown: false,
         }}
       >
-        {!hasSeenOnboarding ? (
-          // Hiển thị Onboarding nếu chưa xem
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        ) : !isAuthenticated ? (
-          // Hiển thị Auth Stack nếu chưa đăng nhập
+        {!isAuthenticated ? (
           <Stack.Screen name="AuthStack" component={AuthStack} />
         ) : (
-          // Hiển thị Main App nếu đã đăng nhập
           <Stack.Screen name="MainApp" component={MainStack} />
         )}
       </Stack.Navigator>

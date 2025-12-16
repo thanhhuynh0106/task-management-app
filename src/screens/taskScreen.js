@@ -146,6 +146,7 @@ const TaskScreen = () => {
                 <CardTask 
                     key={item.id}
                     name={item.name}
+                    description={item.description || ""}
                     endDate={item.endDate}
                     comment={item.comment}
                     progress={item.progress}

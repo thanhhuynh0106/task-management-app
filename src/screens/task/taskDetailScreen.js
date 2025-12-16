@@ -24,6 +24,9 @@ import useTaskStore from "../../../store/taskStore";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import AddComment from "../../components/task/addComment";
 import CommentList from "../../components/task/commentList";
+import SubTaskList from "../../components/task/subtaskList";
+import AddSubtaskInput from "../../components/task/addSubtaskInput";
+import SubtaskProgress from "../../components/task/subtaskProgress";
 import Colors from "../../styles/color";
 import { downloadFile } from "../../utils/downloadHelper";
 import { getAbsoluteFileUrl } from "../../utils/fileUrlHelper";
@@ -33,6 +36,7 @@ const TaskDetailScreen = () => {
   const route = useRoute();
   const { taskId } = route.params;
   const [downloadingFileId, setDownloadingFileId] = useState(null);
+  const [isAddingSubtask, setIsAddingSubtask] = useState(false);
 
   const { user, canManageTasks } = useAuth();
   const {
@@ -41,6 +45,9 @@ const TaskDetailScreen = () => {
     fetchTaskById,
     updateTaskStatus,
     deleteTask,
+    createSubtask,
+    toggleSubtask,
+    deleteSubtask,
   } = useTaskStore();
 
   useEffect(() => {
@@ -68,6 +75,49 @@ const TaskDetailScreen = () => {
         },
       },
     ]);
+  };
+
+  // Subtask handlers
+  const handleAddSubtask = async (title) => {
+    setIsAddingSubtask(true);
+    try {
+      await createSubtask(taskId, title);
+      Alert.alert("Success", "Subtask added successfully");
+    } catch (error) {
+      Alert.alert("Error", error?.error || "Failed to add subtask");
+    } finally {
+      setIsAddingSubtask(false);
+    }
+  };
+
+  const handleToggleSubtask = async (subtaskId) => {
+    try {
+      await toggleSubtask(taskId, subtaskId);
+    } catch (error) {
+      Alert.alert("Error", error?.error || "Failed to toggle subtask");
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId) => {
+    Alert.alert(
+      "Delete Subtask",
+      "Are you sure you want to delete this subtask?",
+      [
+        { text: "Cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSubtask(taskId, subtaskId);
+              Alert.alert("Success", "Subtask deleted successfully");
+            } catch (error) {
+              Alert.alert("Error", error?.error || "Failed to delete subtask");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleDownload = async (url, filename, fileId) => {
@@ -377,6 +427,24 @@ const TaskDetailScreen = () => {
               </View>
             </View>
           ))}
+        </View>
+
+        {/* Subtasks Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Subtasks</Text>
+          <SubtaskProgress subtasks={selectedTask.subTasks || []} />
+          <SubTaskList 
+            subtasks={selectedTask.subTasks || []} 
+            onSubtaskToggle={handleToggleSubtask}
+            onSubtaskDelete={handleDeleteSubtask}
+            editable={selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask}
+          />
+          {(selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask) && (
+            <AddSubtaskInput 
+              onAddSubtask={handleAddSubtask}
+              isLoading={isAddingSubtask}
+            />
+          )}
         </View>
 
         {/* Status Checkbox */}

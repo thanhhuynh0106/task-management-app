@@ -537,7 +537,104 @@ const useTaskStore = create((set, get) => ({
     }
     
     return filtered;
-  }
+  },
+
+  // ========== SUBTASK OPERATIONS ==========
+
+  /**
+   * Create a subtask
+   * @param {string} taskId
+   * @param {string} title
+   */
+  createSubtask: async (taskId, title) => {
+    try {
+      const response = await taskService.createSubtask(taskId, title);
+      
+      // Update selectedTask if it's the same task
+      if (get().selectedTask?._id === taskId) {
+        set({ selectedTask: response.data.task });
+      }
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Toggle subtask completion
+   * @param {string} taskId
+   * @param {string} subtaskId
+   */
+  toggleSubtask: async (taskId, subtaskId) => {
+    try {
+      const response = await taskService.toggleSubtask(taskId, subtaskId);
+      
+      // Update selectedTask if it's the same task
+      if (get().selectedTask?._id === taskId) {
+        set({ selectedTask: response.data.task });
+      }
+      
+      // Update in tasks/myTasks lists
+      const updateTaskInLists = (task) => task._id === taskId ? response.data.task : task;
+      set(state => ({
+        tasks: state.tasks.map(updateTaskInLists),
+        myTasks: state.myTasks.map(updateTaskInLists),
+        teamTasks: state.teamTasks.map(updateTaskInLists),
+      }));
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Update subtask
+   * @param {string} taskId
+   * @param {string} subtaskId
+   * @param {Object} updateData
+   */
+  updateSubtask: async (taskId, subtaskId, updateData) => {
+    try {
+      const response = await taskService.updateSubtask(taskId, subtaskId, updateData);
+      
+      if (get().selectedTask?._id === taskId) {
+        set({ selectedTask: response.data.task });
+      }
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Delete subtask
+   * @param {string} taskId
+   * @param {string} subtaskId
+   */
+  deleteSubtask: async (taskId, subtaskId) => {
+    try {
+      const response = await taskService.deleteSubtask(taskId, subtaskId);
+      
+      if (get().selectedTask?._id === taskId) {
+        set({ selectedTask: response.data });
+      }
+      
+      // Update in tasks/myTasks lists
+      const updateTaskInLists = (task) => task._id === taskId ? response.data : task;
+      set(state => ({
+        tasks: state.tasks.map(updateTaskInLists),
+        myTasks: state.myTasks.map(updateTaskInLists),
+        teamTasks: state.teamTasks.map(updateTaskInLists),
+      }));
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 }));
 
 

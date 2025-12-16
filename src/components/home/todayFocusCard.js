@@ -1,4 +1,3 @@
-// components/home/todayFocusCard.js
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ClockIcon from "../../../assets/icons/clock.svg";
@@ -11,7 +10,6 @@ import CardTask from "../task/cardTask";
 const TodayFocusCard = ({ navigation }) => {
   const { myTasks } = useTaskStore();
 
-  // Lọc và sắp xếp task theo độ ưu tiên (overdue → today → soon → in_progress)
   const getPriorityTasks = () => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -32,7 +30,7 @@ const TodayFocusCard = ({ navigation }) => {
         if (due) {
           const diffDays = Math.floor((due - now) / (1000 * 60 * 60 * 24));
           if (diffDays < 0) {
-            priority = 100 + Math.abs(diffDays); // overdue = ưu tiên cao nhất
+            priority = 100 + Math.abs(diffDays);
             dueLabel = `Overdue ${Math.abs(diffDays)}d`;
           } else if (diffDays === 0) {
             priority = 90;
@@ -64,7 +62,7 @@ const TodayFocusCard = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <ClockIcon width={20} height={20} fill={Colors.primary} />
-            <Text style={styles.title}>Today's Focus</Text>
+            <Text style={styles.title}>Today's focus</Text>
             {priorityTasks.length > 0 && <AppNumber number={priorityTasks.length} />}
           </View>
           {priorityTasks.length > 0 && (
@@ -75,7 +73,7 @@ const TodayFocusCard = ({ navigation }) => {
                 }
             })
             }>
-              <Text style={styles.viewAll}>View all →</Text>
+              <Text style={styles.viewAll}>View all</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -111,6 +109,7 @@ const TodayFocusCard = ({ navigation }) => {
                 <View style={styles.taskItem}>
                 <CardTask
                     name={task.title}
+                    description={task.description || ""}
                     endDate={task.dueLabel}
                     comment={task.comments?.length || 0}
                     progress={task.progress || 0}
@@ -152,7 +151,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "700",
     color: "#1C1C1E",
   },

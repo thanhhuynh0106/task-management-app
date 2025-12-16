@@ -1,20 +1,13 @@
-// screens/NotificationScreen.js
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  RefreshControl,
-  SectionList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TrashIcon from '../../assets/icons/trash.svg';
 import useNotificationStore from '../../store/notificationStore';
 import HeaderWithBackButton from '../components/headerWithBackButton';
 import Colors from '../styles/color';
+import Noti_IC from "../../assets/icons/noti_ic.svg"
 
 const NotificationScreen = ({ navigation }) => {
   const {
@@ -54,21 +47,15 @@ const NotificationScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  // Handle notification click with proper nested navigation
+
   const handlePress = async (item) => {
-    // Mark as read nếu chưa đọc
     if (!item.isRead) {
       await markAsRead(item._id);
     }
-
-    // Navigate dựa trên type và relatedId
     if (item.relatedId) {
-      // relatedId có thể là object (populated) hoặc string
       const taskId = typeof item.relatedId === 'object' ? item.relatedId._id : item.relatedId;
 
-      // Navigate dựa trên type
       if (item.type.includes('task')) {
-        // Navigate đến Task tab trước, sau đó đến TaskDetail
         navigation.navigate('Main', {
           screen: 'task',
           params: {
@@ -77,7 +64,6 @@ const NotificationScreen = ({ navigation }) => {
           }
         });
       } else if (item.type.includes('leave')) {
-        // Navigate đến Leave tab nếu cần
         navigation.navigate('Main', {
           screen: 'leave'
         });
@@ -85,12 +71,12 @@ const NotificationScreen = ({ navigation }) => {
     }
   };
 
-  // Delete notification
+
   const handleDelete = (id) => {
     deleteNotification(id);
   };
 
-  // Format time ago
+
   const formatTimeAgo = (date) => {
     const now = new Date();
     const past = new Date(date);
@@ -103,20 +89,11 @@ const NotificationScreen = ({ navigation }) => {
     return past.toLocaleDateString();
   };
 
-  // Get icon by type
+
   const getIcon = (type) => {
-    const iconMap = {
-      task_assigned: '📌',
-      task_updated: '✏️',
-      comment_added: '💬',
-      deadline_reminder: '⏰',
-      leave_approved: '✅',
-      leave_rejected: '❌',
-    };
-    return iconMap[type] || '📢';
+    return <Noti_IC width={28} height={28} />;
   };
 
-  // Group notifications by date
   const sections = useMemo(() => {
     const groups = { today: [], yesterday: [], thisWeek: [], older: [] };
     const now = new Date();
@@ -148,14 +125,15 @@ const NotificationScreen = ({ navigation }) => {
     return result;
   }, [notifications]);
 
-  // Render notification item
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.item, !item.isRead && styles.unreadItem]}
       onPress={() => handlePress(item)}
       activeOpacity={0.7}
     >
-      <Text style={styles.icon}>{getIcon(item.type)}</Text>
+      <View style={styles.iconContainer}>
+        {getIcon(item.type)}
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={1}>
@@ -179,18 +157,17 @@ const NotificationScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  // Render section header
+
   const renderSectionHeader = ({ section }) => (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
     </View>
   );
 
-  // Render empty state
   const renderEmpty = () => (
     <View style={styles.empty}>
-      <Text style={styles.emptyIcon}>🔔</Text>
-      <Text style={styles.emptyTitle}>No Notifications</Text>
+      <Noti_IC width={64} height={64} style={styles.emptyIcon} />
+      <Text style={styles.emptyTitle}>No notifications</Text>
       <Text style={styles.emptyMessage}>You're all caught up!</Text>
     </View>
   );
@@ -273,9 +250,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: Colors.primary,
   },
-  icon: { 
-    fontSize: 28, 
-    marginRight: 12 
+  iconContainer: { 
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: { 
     flex: 1,
@@ -325,7 +303,8 @@ const styles = StyleSheet.create({
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center', 
-    paddingHorizontal: 40 
+    paddingHorizontal: 40,
+    marginBottom: 80
   },
   emptyIcon: { 
     fontSize: 64, 

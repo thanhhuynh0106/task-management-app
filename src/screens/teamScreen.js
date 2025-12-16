@@ -56,7 +56,7 @@ const TeamScreen = ({ navigation }) => {
     <View style={{ flex: 1, backgroundColor: Colors.secondary }}>
       <HeaderPromo
         text="Team Collaboration"
-        subtext="Work together, achieve together"
+        subtext="Work together, achieve together and grow together. "
         color={Colors.primary}
       />
 
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginTop: -80,
+    marginTop: -89,
   },
   header: {
     backgroundColor: Colors.white,
@@ -142,13 +142,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#000000",
     marginBottom: 4,
   },
   headerSubtext: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#666666",
   },
   scrollView: {
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   teamsContainer: {
+    marginTop: 20,
     gap: 12,
   },
   loadingContainer: {

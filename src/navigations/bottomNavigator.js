@@ -16,10 +16,12 @@ import LeaveScreen from "../screens/leaveScreen";
 import TaskNavigator from "./taskNavigator";
 import TeamStackNavigator from "./teamStackNavigator";
 import PendingLeavesScreen from "../screens/leave/pendingLeavesScreen";
+import { useAuth } from "../contexts/authContext";
 
 const Bottom = createBottomTabNavigator();
 
 const BottomNavigator = () => {
+    const { user } = useAuth();
     return (
         <Bottom.Navigator
             screenOptions={{
@@ -43,7 +45,8 @@ const BottomNavigator = () => {
                     ),
                 }}
             />
-            <Bottom.Screen
+            {user?.role !== "hr_manager" && (
+                <Bottom.Screen
                 name="clockin"
                 component={ClockinScreen}
                 options={{
@@ -52,6 +55,7 @@ const BottomNavigator = () => {
                     ),
                 }}
             />
+            )}
             <Bottom.Screen
                 name="task"
                 component={TaskNavigator}
@@ -61,19 +65,32 @@ const BottomNavigator = () => {
                     ),
                 }}
             />
-            <Bottom.Screen
-              name="team"
-              component={TeamStackNavigator}
-              options={{
-                tabBarIcon: ({ focused }) =>
-                  focused ? (
-                    <TeamAc width={28} height={28} />
-                  ) : (
-                    <TeamInac width={28} height={28} />
-                  ),
-              }}
-            />
-            <Bottom.Screen
+            {user?.role !== "employee" && (
+                <Bottom.Screen
+                    name="team"
+                    component={TeamStackNavigator}
+                    options={{
+                        tabBarIcon: ({ focused }) =>
+                            focused ? (
+                                <TeamAc width={28} height={28} />
+                            ) : (
+                                <TeamInac width={28} height={28} />
+                            ),
+                    }}
+                />
+            )}
+            {user?.role === "hr_manager" ? (
+                <Bottom.Screen 
+                    name="PendingLeaves"
+                    component={PendingLeavesScreen}
+                    options={{
+                        tabBarIcon: ({ focused }) => (
+                            focused ? <LeaveAc width={28} height={28} /> : <LeaveInac width={28} height={28} />
+                        ),
+                    }}
+                />
+            ) : (
+                <Bottom.Screen
                 name="leave"
                 component={LeaveScreen}
                 options={{
@@ -82,6 +99,7 @@ const BottomNavigator = () => {
                     )
                 }}
             />
+            )}
         </Bottom.Navigator>
     )
 }

@@ -14,7 +14,8 @@ const CardTask = ({
   category, 
   flag, 
   bgColor,
-  assignees = [] // New prop
+  assignees = [],
+  description = "" // New prop for description
 }) => {
   const bgColors = bgColor;
 
@@ -85,6 +86,13 @@ const CardTask = ({
               textColor="white"
             />
           </View>
+
+          {/* Description */}
+          {description && description.trim() !== "" && (
+            <Text style={styles.description} numberOfLines={2}>
+              {description}
+            </Text>
+          )}
           
           <View style={styles.footer}>
             <ProgressBar progress={progress} />
@@ -150,6 +158,12 @@ const styles = StyleSheet.create({
   progress: {
     flexDirection: "row",
     gap: 8,
+  },
+  description: {
+    fontSize: 13,
+    color: "#666",
+    lineHeight: 18,
+    marginTop: 4,
   },
   footer: {
     marginTop: 10,

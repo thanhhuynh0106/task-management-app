@@ -47,12 +47,16 @@ const TaskCard = () => {
           tasks.map((task, index) => (
             <View key={index} style={styles.isTasked}>
               <CardTask
-                name={task.name}
-                endDate={task.endDate}
-                comment={task.comment}
-                progress={task.progress}
-                category={task.category}
-                flag={task.flag}
+                name={task.title || task.name}
+                description={task.description || ""}
+                endDate={task.dueDate 
+                  ? new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) 
+                  : task.endDate || "No date"}
+                comment={task.comments?.length || task.comment || 0}
+                progress={task.progress || 0}
+                category={task.status || task.category}
+                flag={task.priority || task.flag || "medium"}
+                assignees={task.assignedTo || []}
               />
             </View>
           ))
