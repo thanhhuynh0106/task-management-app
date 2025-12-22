@@ -24,31 +24,31 @@ const TodayFocusCard = ({ navigation }) => {
 
         due?.setHours(0, 0, 0, 0);
 
-        let priority = 0;
+        let sortPriority = 0;
         let dueLabel = "No due date";
 
         if (due) {
           const diffDays = Math.floor((due - now) / (1000 * 60 * 60 * 24));
           if (diffDays < 0) {
-            priority = 100 + Math.abs(diffDays);
+            sortPriority = 100 + Math.abs(diffDays);
             dueLabel = `Overdue ${Math.abs(diffDays)}d`;
           } else if (diffDays === 0) {
-            priority = 90;
+            sortPriority = 90;
             dueLabel = "Today";
           } else if (diffDays <= 2) {
-            priority = 80 - diffDays;
+            sortPriority = 80 - diffDays;
             dueLabel = diffDays === 1 ? "Tomorrow" : `In ${diffDays} days`;
           } else {
-            priority = 10;
+            sortPriority = 10;
             dueLabel = due.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
           }
         } else {
-          priority = task.status === "in_progress" ? 20 : 5;
+          sortPriority = task.status === "in_progress" ? 20 : 5;
         }
 
-        return { ...task, priority, dueLabel };
+        return { ...task, sortPriority, dueLabel };
       })
-      .sort((a, b) => b.priority - a.priority)
+      .sort((a, b) => b.sortPriority - a.sortPriority)
       .slice(0, 3);
 
     return sorted;

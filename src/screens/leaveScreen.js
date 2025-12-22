@@ -15,6 +15,7 @@ import Colors from "../styles/color";
 import Available from "../../assets/icons/available.svg";
 import NoLeave from "../../assets/icons/no_leave.svg";
 import Rejected from "../../assets/icons/rejected.svg";
+import Approved from "../../assets/icons/approved.svg";
 import Used from "../../assets/icons/used.svg";
 import { useLeaveStore } from "../../store";
 import AppButton from "../components/appButton";
@@ -263,7 +264,7 @@ const LeaveScreen = ({ navigation }) => {
           <IconCardText
             icon={<Available width={10} height={10} />}
             text={"Available"}
-            subtext={leaveBalance.remainingDays || 0}
+            subtext={leaveBalance.remaining || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",
@@ -272,7 +273,7 @@ const LeaveScreen = ({ navigation }) => {
           <IconCardText
             icon={<Used width={10} height={10} />}
             text={"Leave Used"}
-            subtext={leaveBalance.usedDays || 0}
+            subtext={leaveBalance.used || 0}
             subtextStyle={{
               fontSize: 18,
               fontWeight: "bold",

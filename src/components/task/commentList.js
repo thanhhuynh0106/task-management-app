@@ -54,7 +54,7 @@ const CommentList = ({ comments = [] }) => {
                   {comment.userId?.profile?.fullName || "Unknown"}
                 </Text>
                 <Text style={styles.userRole}>
-                  {comment.userId?.role || "Employee"}
+                  {comment.userId?.profile?.position || "Employee"}
                 </Text>
               </View>
             </View>

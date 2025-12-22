@@ -5,14 +5,9 @@ import leaveService from '../src/services/leaveService';
 const useLeaveStore = create((set, get) => ({
   leaves: [],
   leaveBalance: {
-    totalAnnualLeave: 12,
-    usedDays: 0,
-    remainingDays: 12,
-    byType: {
-      sick: { total: 12, used: 0, remaining: 12 },
-      vacation: { total: 12, used: 0, remaining: 12 },
-      personal: { total: 12, used: 0, remaining: 12 }
-    }
+    total: 12,
+    used: 0,
+    remaining: 12
   },
   pendingLeaves: [],
   isLoading: false,
@@ -85,6 +80,8 @@ const useLeaveStore = create((set, get) => ({
         pendingLeaves: state.pendingLeaves.filter(leave => leave._id !== leaveId),
         isLoading: false
       }));
+
+      await get().fetchLeaveBalance();
       
       return response;
     } catch (error) {
@@ -114,6 +111,8 @@ const useLeaveStore = create((set, get) => ({
         pendingLeaves: state.pendingLeaves.filter(leave => leave._id !== leaveId),
         isLoading: false
       }));
+
+      await get().fetchLeaveBalance();
       
       return response;
     } catch (error) {
@@ -163,14 +162,9 @@ const useLeaveStore = create((set, get) => ({
       const backendBalance = response.data?.balance;
     
       const leaveBalance = {
-        totalAnnualLeave: backendBalance?.total || 12,
-        usedDays: backendBalance?.used || 0,
-        remainingDays: backendBalance?.remaining || 12,
-        byType: {
-          sick: { total: 12, used: 0, remaining: 12 },
-          vacation: { total: 12, used: 0, remaining: 12 },
-          personal: { total: 12, used: 0, remaining: 12 }
-        }
+        total: backendBalance?.total || 12,
+        used: backendBalance?.used || 0,
+        remaining: backendBalance?.remaining || 12
       };
       
       set({ 

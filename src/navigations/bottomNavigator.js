@@ -1,5 +1,5 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { default as React } from "react";
+import { default as React, use } from "react";
 import CalendarAc from "../../assets/icons/calendar_ac.svg";
 import CalendarInac from "../../assets/icons/calendar_inac.svg";
 import HomeAc from "../../assets/icons/home_ac.svg";
@@ -17,6 +17,7 @@ import TaskNavigator from "./taskNavigator";
 import TeamStackNavigator from "./teamStackNavigator";
 import PendingLeavesScreen from "../screens/leave/pendingLeavesScreen";
 import { useAuth } from "../contexts/authContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Bottom = createBottomTabNavigator();
 
@@ -28,8 +29,18 @@ const BottomNavigator = () => {
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    height: 90,
+                    height: 60 + useSafeAreaInsets().bottom,
                     backgroundColor: 'black',
+                    paddingBottom: useSafeAreaInsets().bottom,
+                    
+                    // borderTopWidth: 1,
+                    // borderTopColor: 'white',
+
+                    // borderBottomWidth: 1, 
+                    // borderBottomColor: 'white',
+
+                    // marginBottom: useSafeAreaInsets().bottom,
+
                 },
                 tabBarIconStyle: {
                     marginVertical: 15,

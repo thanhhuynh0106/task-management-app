@@ -1,14 +1,42 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import Colors from "../../styles/color";
+import { API_URL } from "../../config/api.config";
 
-const MessageBubble = ({ message, isOwn, time }) => {
+const MessageBubble = ({ message, isOwn, time, attachments = [] }) => {
+  const hasAttachments = attachments && attachments.length > 0;
+  const hasText = message && message.trim().length > 0;
+
+  const getFullImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const baseUrl = API_URL.replace('/api', '');
+    return `${baseUrl}${url}`;
+  };
+
   return (
     <View style={[styles.container, isOwn ? styles.ownContainer : styles.otherContainer]}>
       <View style={[styles.bubble, isOwn ? styles.ownBubble : styles.otherBubble]}>
-        <Text style={[styles.messageText, isOwn ? styles.ownText : styles.otherText]}>
-          {message}
-        </Text>
+        {hasAttachments && attachments.map((attachment, index) => (
+          <View key={index} style={styles.attachmentContainer}>
+            {attachment.type === 'image' && (
+              <TouchableOpacity activeOpacity={0.9}>
+                <Image
+                  source={{ uri: getFullImageUrl(attachment.url) }}
+                  style={styles.imageAttachment}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+        
+        {hasText && (
+          <Text style={[styles.messageText, isOwn ? styles.ownText : styles.otherText]}>
+            {message}
+          </Text>
+        )}
+        
         <Text style={[styles.timeText, isOwn ? styles.ownTimeText : styles.otherTimeText]}>
           {time}
         </Text>
@@ -65,6 +93,14 @@ const styles = StyleSheet.create({
   },
   otherTimeText: {
     color: "#666666",
+  },
+  attachmentContainer: {
+    marginBottom: 8,
+  },
+  imageAttachment: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
   },
 });
 

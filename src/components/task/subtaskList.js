@@ -16,20 +16,22 @@ const SubTaskList = ({ subtasks = [], onSubtaskToggle, onSubtaskDelete, editable
 
     const handleToggleSubtask = (subtask) => {
         if (onSubtaskToggle) {
-            onSubtaskToggle(subtask._id, !subtask.isCompleted);
+            const subtaskId = subtask._id || subtask.id;
+            onSubtaskToggle(subtaskId, !subtask.isCompleted);
         }
     };
 
     const handleDeleteSubtask = (subtask) => {
         if (onSubtaskDelete) {
-            onSubtaskDelete(subtask._id);
+            const subtaskId = subtask._id || subtask.id;
+            onSubtaskDelete(subtaskId);
         }
     };
 
     return (
         <View style={styles.container}>
             {subtasks.map((subtask) => (
-                <View key={subtask._id} style={styles.subtaskItem}>
+                <View key={subtask._id || subtask.id} style={styles.subtaskItem}>
                     <TouchableOpacity 
                         style={styles.checkboxContainer}
                         onPress={() => handleToggleSubtask(subtask)}

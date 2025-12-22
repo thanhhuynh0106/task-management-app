@@ -15,11 +15,31 @@ const CardTask = ({
   flag, 
   bgColor,
   assignees = [],
-  description = "" // New prop for description
+  description = ""
 }) => {
   const bgColors = bgColor;
 
-  // Render assignees avatars (max 3, show +N for more)
+  const getStatusDisplay = (status) => {
+    const statusMap = {
+      'todo': { text: 'To Do', color: '#667085', bgColor: '#F2F4F7' },
+      'in_progress': { text: 'In Progress', color: '#0284C7', bgColor: '#E0F2FE' },
+      'done': { text: 'Done', color: '#16A34A', bgColor: '#DCFCE7' }
+    };
+    return statusMap[status] || statusMap['todo'];
+  };
+  
+  const getPriorityInfo = (priority) => {
+    const priorityMap = {
+      'high': { text: 'High', color: '#fe3b3bff'},
+      'medium': { text: 'Medium', color: '#eda11eff'},
+      'low': { text: 'Low', color: '#10c78aff'}
+    };
+    return priorityMap[priority] || '#F59E0B';
+  };
+
+  const statusInfo = getStatusDisplay(category);
+  const priorityInfo = getPriorityInfo(flag);
+
   const renderAssignees = () => {
     if (!assignees || assignees.length === 0) return null;
 
@@ -76,13 +96,14 @@ const CardTask = ({
           <View style={styles.progress}>
             <TaskCategory
               icon={category}
-              name={category}
-              textColor="#475467"
+              name={statusInfo.text}
+              textColor={statusInfo.color}
+              bgColor={statusInfo.bgColor}
             />
             <TaskCategory
               icon="flag"
-              name={flag}
-              bgColor="#F95555"
+              name={priorityInfo.text}
+              bgColor={priorityInfo.color}
               textColor="white"
             />
           </View>

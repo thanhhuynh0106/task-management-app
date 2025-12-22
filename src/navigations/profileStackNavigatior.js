@@ -1,4 +1,3 @@
-// New File: HomeStackNavigation.js (For navigation from MyProfile to other screens)
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import ChangePassword from '../screens/profile/changePassword';

@@ -1,7 +1,7 @@
-// src/contexts/authContext.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import authService from '../services/authService';
+import socketService from '../services/socketService';
 
 const AuthContext = createContext();
 
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
       setUser(storedUser);
       setHasSeenOnboarding(onboarding === "true");
 
-      // Refresh user data from API if token exists
+
       if (token && storedUser) {
         try {
           const response = await authService.getCurrentUser();
@@ -42,6 +42,13 @@ export const AuthProvider = ({ children }) => {
           if (response?.data) {
             setUser(response.data);
           } else {
+          }
+          
+          try {
+            await socketService.connect();
+            console.log('Socket connected on app start');
+          } catch (socketError) {
+            console.error('Socket connection failed on app start:', socketError);
           }
         } catch (error) {
           console.log("Could not refresh user data");
@@ -62,6 +69,14 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(email, password);
       setIsAuthenticated(true);
       setUser(response.user);
+      
+      try {
+        await socketService.connect();
+        console.log('Socket connected after login');
+      } catch (socketError) {
+        console.error('Socket connection failed after login:', socketError);
+      }
+      
       return { success: true, user: response.user };
     } catch (error) {
       return {
@@ -94,6 +109,10 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      // Disconnect socket before logout
+      socketService.disconnect();
+      console.log('Socket disconnected on logout');
+      
       await authService.logout();
       setIsAuthenticated(false);
       setUser(null);
@@ -128,7 +147,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // === HELPER: CHECK ROLE ===
+  
   const hasRole = (role) => {
     const userRole = user?.role;
     const result = userRole === role;
@@ -156,7 +175,6 @@ export const AuthProvider = ({ children }) => {
     return result;
   };
 
-  // Log current state whenever it changes
   useEffect(() => {
     if (!isLoading) {
       console.log('🔄 Auth State Updated:', {

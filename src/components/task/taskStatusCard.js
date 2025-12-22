@@ -15,6 +15,21 @@ const TaskStatusCard = ({ todoCount, inProgressCount, doneCount }) => {
   const pendingRate = totalTasks > 0 ? ((todoCount + inProgressCount) / totalTasks) * 100 : 0;
 
   const getStatus = () => {
+    // Case 1: Không có task nào (assigned) - Tốt
+    if (totalTasks === 0) {
+      return {
+        icon: <MatXanhCuoiLon width={32} height={32} />,
+        title: "All clear",
+        tagText: "Good",
+        tagColor: "#22c55e",
+        tagBgColor: "#dcfce7",
+        message: "No tasks assigned yet. Ready to take on new challenges!",
+        progress: 100,
+        progressColor: "#22c55e",
+      };
+    }
+
+    // Case 2: Tất cả tasks đã done - Xuất sắc
     if (todoCount === 0 && inProgressCount === 0 && doneCount > 0) {
       return {
         icon: <MatXanhCuoiLon width={32} height={32} />,
@@ -28,23 +43,25 @@ const TaskStatusCard = ({ todoCount, inProgressCount, doneCount }) => {
       };
     }
 
-    if (pendingRate < 50 && totalTasks > 0) {
+    // Case 3: Pending tasks < 50% (Đã hoàn thành > 50%) - Tốt
+    if (pendingRate < 50) {
       return {
         icon: <MatVangMiengNgang width={32} height={32} />,
         title: "Good progress",
         tagText: "Okay",
         tagColor: "white",
         tagBgColor: "#e9e629ff",
-        message: `Solid progress! ${todoCount + inProgressCount} items remain. Think of it as halftime. You're winning, but the couch is calling!`,
+        message: `Solid progress! ${todoCount + inProgressCount} items remain. Think of it as halftime. You're winning, but keep the momentum!`,
         progress: completionRate,
         progressColor: "#fdf03fff",
       };
     }
 
+    // Case 4a: Pending tasks 50-75% - Cần chú ý
     if (pendingRate >= 50 && pendingRate < 75) {
       return {
         icon: <MatCamBuon width={32} height={32} />,
-        title: "Urgent",
+        title: "Needs attention",
         tagText: "Struggle",
         tagColor: "white",
         tagBgColor: "#FD824C",
@@ -54,6 +71,7 @@ const TaskStatusCard = ({ todoCount, inProgressCount, doneCount }) => {
       };
     }
 
+    // Case 4b: Pending tasks >= 75% - Quá tải
     return {
       icon: <MatDoTucGian width={32} height={32} />,
       title: "Overwhelmed",

@@ -7,6 +7,7 @@ import Colors from "../../styles/color";
 import AppIcon from "../appIcon";
 import Avatar from "../avatar";
 import NotificationBadge from "./notificationBadge";
+import MessageBadge from "./messageBadge";
 
 const UserHeader = ({ navigation }) => {
   const { user, isLoading } = useAuth();
@@ -40,10 +41,10 @@ const UserHeader = ({ navigation }) => {
           <Avatar
             url={avatarUrl}        
             name={avatarKey}       
-            width={54}
-            height={54}
+            width={46}
+            height={46}
           />
-          {user.isOnline && <View style={styles.onlineDot} />}
+          {/* {user.isOnline && <View style={styles.onlineDot} />} */}
         </View>
 
         <View style={styles.leftName}>
@@ -64,6 +65,7 @@ const UserHeader = ({ navigation }) => {
           color={Colors.secondary}
           onPress={() => navigation.navigate("Message")}
         />
+        <MessageBadge />
 
         <View style={styles.notificationWrapper}>
           <AppIcon
@@ -115,12 +117,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   leftUsername: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "600",
     color: "#1f2937",
   },
   leftUsermail: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.primary,
     marginTop: 2,
   },

@@ -1,4 +1,3 @@
-// components/home/notificationBadge.js
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -8,12 +7,10 @@ const NotificationBadge = () => {
   const unreadCount = useNotificationStore(state => state.unreadCount);
   const fetchUnreadCount = useNotificationStore(state => state.fetchUnreadCount);
 
-  // Fetch khi component mount
   useEffect(() => {
     fetchUnreadCount();
   }, []);
 
-  // Auto-refresh khi screen focus
   useFocusEffect(
     React.useCallback(() => {
       fetchUnreadCount();
@@ -26,7 +23,6 @@ const NotificationBadge = () => {
     }, [fetchUnreadCount])
   );
 
-  // Không hiển thị nếu count = 0
   if (!unreadCount || unreadCount === 0) return null;
 
   return (

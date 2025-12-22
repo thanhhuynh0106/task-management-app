@@ -1,6 +1,7 @@
 import React from "react"
 import { View, Text, StyleSheet, Pressable } from "react-native"
 import Avatar from "../avatar"
+import OnlineBadge from "./onlineBadge"
 
 const chatThread = ({thread, onPress}) => {
     return (
@@ -8,7 +9,10 @@ const chatThread = ({thread, onPress}) => {
             onPress={onPress}
             style={styles.container}
         >
-            <Avatar name={thread.name} width={50} height={50} />
+            <View style={styles.avatarContainer}>
+                <Avatar name={thread.name} width={50} height={50} />
+                <OnlineBadge style={styles.badge} userId={thread.userId} />
+            </View>
             <View style={styles.content}>
                             <View style={styles.mid}>
                 <Text style={styles.threadName}>{thread.name}</Text>
@@ -81,6 +85,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "700",
+  },
+  avatarContainer: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+  },
+  badge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderColor: '#fff', 
   },
 })
 

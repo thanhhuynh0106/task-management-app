@@ -1,24 +1,12 @@
 import { useAuth } from "@/src/contexts/authContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import DownloadIcon from "../../../assets/icons/download.svg";
 import EditIcon from "../../../assets/icons/edit.svg";
 import TrashIcon from "../../../assets/icons/trash.svg";
 import { CategoryMap, DefaultCategory } from "../../utils/categoryMapping";
-
 import { useState } from "react";
 import useTaskStore from "../../../store/taskStore";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
@@ -216,7 +204,6 @@ const TaskDetailScreen = () => {
   const StatusIcon = CategoryMap[statusKey] || DefaultCategory;
   const statusConfig = getStatusConfig(selectedTask.status);
 
-  // Lọc ảnh và file, convert URL to absolute
   const imageAttachments = (selectedTask.attachments || [])
     .filter((att) =>
       att.type?.includes("image") || /\.(jpe?g|png|gif|webp)$/i.test(att.url)
@@ -238,17 +225,22 @@ const TaskDetailScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderWithBackButton title="Task Details" onBackPress={() => navigation.goBack()} />
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl 
-            refreshing={isLoading} 
-            onRefresh={() => fetchTaskById(taskId)}
-            tintColor={Colors.primary}
-          />
-        }
+      
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isLoading} 
+              onRefresh={() => fetchTaskById(taskId)}
+              tintColor={Colors.primary}
+            />
+          }
+        >
         {/* Title & Status Badge */}
         <View style={styles.headerSection}>
           <View style={styles.headerTop}>
@@ -437,9 +429,9 @@ const TaskDetailScreen = () => {
             subtasks={selectedTask.subTasks || []} 
             onSubtaskToggle={handleToggleSubtask}
             onSubtaskDelete={handleDeleteSubtask}
-            editable={selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask}
+            editable={canManageTask}
           />
-          {(selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask) && (
+          {canManageTask && (
             <AddSubtaskInput 
               onAddSubtask={handleAddSubtask}
               isLoading={isAddingSubtask}
@@ -512,6 +504,7 @@ const TaskDetailScreen = () => {
           <AddComment taskId={taskId} />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -737,6 +730,9 @@ const styles = StyleSheet.create({
   assigneeRole: { fontSize: 13, color: Colors.primary, marginTop: 2 },
 
   statusCheckboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
     gap: 12,
   },
   checkboxItem: {

@@ -234,6 +234,7 @@ const useTaskStore = create((set, get) => ({
         teamTasks: state.teamTasks.map(task => 
           task._id === id ? updatedTask : task
         ),
+        selectedTask: state.selectedTask?._id === id ? updatedTask : state.selectedTask,
         isLoading: false
       }));
       
@@ -322,12 +323,10 @@ const useTaskStore = create((set, get) => ({
     try {
       const response = await taskService.addComment(id, text);
       
+      // Cập nhật selectedTask với data mới từ server (đã populate userId)
       set(state => ({
         selectedTask: state.selectedTask?._id === id
-          ? {
-              ...state.selectedTask,
-              comments: [...(state.selectedTask.comments || []), text]
-            }
+          ? response.data
           : state.selectedTask
       }));
       

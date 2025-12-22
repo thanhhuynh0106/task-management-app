@@ -14,8 +14,8 @@ import { leaveService } from "../services";
 
 const mockLeaveCategories = [
   { id: 1, name: "Vacation Leave", value: "vacation", days: 12 },
-  { id: 2, name: "Sick Leave", value: "sick", days: 10 },
-  { id: 3, name: "Personal Leave", value: "personal", days: 5 },
+  { id: 2, name: "Sick Leave", value: "sick", days: 12 },
+  { id: 3, name: "Personal Leave", value: "personal", days: 12 },
 ];
 
 // const mockTaskDelegation = [

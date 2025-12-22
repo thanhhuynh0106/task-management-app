@@ -11,6 +11,7 @@ import ToDo from "../../assets/icons/todo.svg"
 
 export const CategoryMap = {
     'todo': ToDo,
+    'in_progress': InProgress,
     'inprogress': InProgress,
     'done': Done,
     'comment': Comment,

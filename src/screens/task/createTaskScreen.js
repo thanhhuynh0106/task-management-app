@@ -2,20 +2,9 @@ import { useAuth } from '@/src/contexts/authContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import CalendarIcon from "../../../assets/icons/calendar-2.svg";
 import Category from "../../../assets/icons/category.svg";
 import ChevronDown from "../../../assets/icons/chevron_down.svg";
@@ -44,12 +33,6 @@ const PRIORITIES = [
   { id: "low", name: "Low", color: "#34C759" },
 ];
 
-const DIFFICULTIES = [
-  { id: 1, name: "Easy", level: "⭐" },
-  { id: 2, name: "Medium", level: "⭐⭐" },
-  { id: 3, name: "Hard", level: "⭐⭐⭐" },
-  { id: 4, name: "Very Hard", level: "⭐⭐⭐⭐" },
-];
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '0 B';
@@ -63,7 +46,6 @@ const CreateTaskScreen = ({ navigation }) => {
   const { user, canManageTasks } = useAuth();
   const { createTask, isLoading } = useTaskStore();
 
-  // Form States
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -72,29 +54,22 @@ const CreateTaskScreen = ({ navigation }) => {
   const [startDate, setStartDate] = useState(null);
   const [dueDate, setDueDate] = useState(null);
   
-  // Subtask States
   const [subtasks, setSubtasks] = useState([]);
-
-  // Calendar Modal
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [tempDate, setTempDate] = useState(null);
-  const [dateField, setDateField] = useState(""); // "start" or "due
+  const [dateField, setDateField] = useState("");
 
-  // Modal States
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
-  
-  // NEW: Confirmation and Success Dialog States
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Temp selections for modals
   const [tempMembers, setTempMembers] = useState([]);
   const [tempPriority, setTempPriority] = useState(null);
 
-  // Team members
   const [teamMembers, setTeamMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
@@ -142,7 +117,6 @@ const CreateTaskScreen = ({ navigation }) => {
       const token = await AsyncStorage.getItem('authToken');
       const formData = new FormData();
       
-      // Append each file to FormData
       files.forEach((file) => {
         const fileBlob = {
           uri: file.uri,
@@ -204,7 +178,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const handleAttachmentPress = async (index) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',                    // Allow all file types
+        type: '*/*',
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -220,8 +194,7 @@ const CreateTaskScreen = ({ navigation }) => {
       for (const file of files) {
         const fileName = file.name || `file-${Date.now()}`;
         const fileSize = file.size || 0;
-  
-        // 1. Check file size (max 10MB)
+
         if (fileSize > 10 * 1024 * 1024) {
           Alert.alert(
             "File Too Large",
@@ -230,14 +203,12 @@ const CreateTaskScreen = ({ navigation }) => {
           );
           continue;
         }
-  
-        // 2. Block dangerous extensions
+
         if (isFileBlocked(fileName)) {
           blockedFiles.push(fileName);
           continue;
         }
   
-        // 3. File passed → add to list
         validFiles.push({
           id: `${Date.now()}-${Math.random()}`,
           uri: file.uri,
@@ -247,7 +218,6 @@ const CreateTaskScreen = ({ navigation }) => {
         });
       }
   
-      // Show alert if any file was blocked
       if (blockedFiles.length > 0) {
         Alert.alert(
           "Restricted Files",
@@ -256,7 +226,6 @@ const CreateTaskScreen = ({ navigation }) => {
         );
       }
   
-      // Check total attachment limit (max 3)
       const newTotal = attachments.length + validFiles.length;
       if (newTotal > 3) {
         const canAdd = 3 - attachments.length;
@@ -265,11 +234,10 @@ const CreateTaskScreen = ({ navigation }) => {
           `You can only attach up to 3 files.\nYou currently have ${attachments.length}, so only ${canAdd} more ${canAdd === 1 ? 'file is' : 'files are'} allowed.`,
           [{ text: "OK" }]
         );
-        // Trim to allowed number
+
         validFiles.splice(canAdd);
       }
   
-      // Add valid files
       if (validFiles.length > 0) {
         setAttachments(prev => [...prev, ...validFiles]);
       }
@@ -290,10 +258,9 @@ const CreateTaskScreen = ({ navigation }) => {
     setAttachments(attachments.filter((attachment) => attachment.id !== id));
   };
 
-  // Subtask handlers
   const handleAddSubtask = (title) => {
     const newSubtask = {
-      id: `temp-${Date.now()}`, // Temporary ID for local state
+      id: `temp-${Date.now()}`,
       title: title.trim(),
       isCompleted: false,
     };
@@ -379,7 +346,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
 
-  // === RENDER SELECTOR VỚI ICON CALENDAR ===
+
   const renderDateSelector = (label, value, field) => (
     <View style={styles.selectorContainer}>
       <Text style={styles.selectorLabel}>{label}</Text>
@@ -395,7 +362,7 @@ const CreateTaskScreen = ({ navigation }) => {
     </View>
   );
 
-  // === CALENDAR MODAL (giống PersonalData) ===
+
   const renderCalendarModal = () => (
     <Modal visible={showCalendarModal} transparent animationType="slide">
       <Pressable style={styles.modalOverlay} onPress={() => setShowCalendarModal(false)}>
@@ -452,7 +419,6 @@ const CreateTaskScreen = ({ navigation }) => {
 
 
 
-  // NEW: Actual create task function
   const handleConfirmCreateTask = async () => {
     setShowConfirmDialog(false);
     setIsUploading(true);
@@ -464,7 +430,7 @@ const CreateTaskScreen = ({ navigation }) => {
         assignedTo: selectedMembers.map((m) => m._id),
         teamId: user?.teamId,
         priority: selectedPriority?.id || "medium",
-        difficulty: "medium", // Default difficulty
+        difficulty: "medium",
         attachments: [],
         startDate: startDate || null,
         dueDate: dueDate || null,
@@ -473,12 +439,11 @@ const CreateTaskScreen = ({ navigation }) => {
       const createResponse = await createTask(taskPayload);
       const newTaskId = createResponse.data._id || createResponse._id;
   
-      // Upload attachments if any
+
       if (attachments.length > 0) {
         await uploadAttachments(attachments, newTaskId);
       }
 
-      // Create subtasks if any
       if (subtasks.length > 0) {
         const subtaskPromises = subtasks.map(subtask => 
           apiClient.post(`/tasks/${newTaskId}/subtasks`, { title: subtask.title })
@@ -486,7 +451,6 @@ const CreateTaskScreen = ({ navigation }) => {
         await Promise.all(subtaskPromises);
       }
   
-      // Show success dialog
       setIsUploading(false);
       setShowSuccessDialog(true);
     } catch (error) {
@@ -606,7 +570,6 @@ const CreateTaskScreen = ({ navigation }) => {
     </Modal>
   );
 
-  // NEW: Confirmation Dialog (Hình 1)
   const renderConfirmDialog = () => (
     <Modal
       visible={showConfirmDialog}
@@ -651,7 +614,6 @@ const CreateTaskScreen = ({ navigation }) => {
     </Modal>
   );
 
-  // NEW: Success Dialog (Hình 2)
   const renderSuccessDialog = () => (
     <Modal
       visible={showSuccessDialog}
@@ -672,7 +634,7 @@ const CreateTaskScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <Text style={styles.dialogTitle}>Task Has Been Created!</Text>
+          <Text style={styles.dialogTitle}>Task has been created!</Text>
           <Text style={styles.dialogMessage}>
             Congratulations! Task has been created! view your task in the task management
           </Text>
@@ -684,7 +646,7 @@ const CreateTaskScreen = ({ navigation }) => {
               navigation.goBack();
             }}
           >
-            <Text style={styles.dialogButtonPrimaryText}>View Task Management</Text>
+            <Text style={styles.dialogButtonPrimaryText}>View task management</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -708,6 +670,7 @@ const CreateTaskScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <HeaderWithBackButton
         title="Create New Task"
         onBackPress={() => navigation.goBack()}
@@ -720,11 +683,10 @@ const CreateTaskScreen = ({ navigation }) => {
       >
         <View style={styles.contentWrapper}>
           <View style={styles.content}>
-            {/* Attachments */}
             <View style={styles.selectorContainer}>
               <Text style={styles.selectorLabel}>Attachment ({attachments.length}/3)</Text>
               <Text style={styles.selectorHint}>
-                Format should be in .pdf .jpeg .png and less than 5MB
+                Format should be in .pdf .jpeg .png and less than 10MB
               </Text>
               <View style={styles.attachmentRow}>
                 {[0, 1, 2].map((index) => {
@@ -768,7 +730,7 @@ const CreateTaskScreen = ({ navigation }) => {
 
             {/* Task Title */}
             <View style={styles.selectorContainer}>
-              <Text style={styles.selectorLabel}>Task Title</Text>
+              <Text style={styles.selectorLabel}>Task title</Text>
               <View style={styles.inputWrapper}>
                 <Category width={20} height={20} style={styles.inputIcon} />
                 <TextInput
@@ -783,7 +745,7 @@ const CreateTaskScreen = ({ navigation }) => {
 
             {/* Task Description */}
             <View style={styles.selectorContainer}>
-              <Text style={styles.selectorLabel}>Task Description</Text>
+              <Text style={styles.selectorLabel}>Task description</Text>
               <TextInput
                 style={[styles.textInputDescription, styles.textInputMultiline]}
                 placeholder="Enter task description"
@@ -846,10 +808,12 @@ const CreateTaskScreen = ({ navigation }) => {
                 editable={true}
               />
               
-              <AddSubtaskInput 
-                onAddSubtask={handleAddSubtask}
-                isLoading={false}
-              />
+              {canManageTasks && (
+                <AddSubtaskInput 
+                  onAddSubtask={handleAddSubtask}
+                  isLoading={false}
+                />
+              )}
             </View>
           </View>
         </View>
@@ -887,7 +851,7 @@ const CreateTaskScreen = ({ navigation }) => {
                 {item.profile?.fullName || item.email}
               </Text>
               <Text style={styles.itemSubtext}>
-                {item.role} • {item.department || 'No department'}
+                {item.profile.position || "Employee"} • {item.profile.department || 'No department'}
               </Text>
             </View>
             {isSelected && (
@@ -934,9 +898,9 @@ const CreateTaskScreen = ({ navigation }) => {
       )}
 
       {renderCalendarModal()} 
-      {/* NEW: Dialogs */}
       {renderConfirmDialog()}
       {renderSuccessDialog()}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   ScrollView,
@@ -14,6 +15,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform 
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -65,7 +67,7 @@ const EditTaskScreen = () => {
   const route = useRoute();
   const { taskId } = route.params;
 
-  const { user } = useAuth();
+  const { user, canManageTasks } = useAuth();
   const { 
     selectedTask, 
     fetchTaskById, 
@@ -321,11 +323,9 @@ const EditTaskScreen = () => {
     }
   };
 
-  // Parse display date string back to Date object
   const parseDisplayDate = (dateStr) => {
     if (!dateStr) return null;
-    
-    // Format: "24 November 2025"
+
     const parts = dateStr.split(' ');
     if (parts.length !== 3) return null;
     
@@ -339,7 +339,6 @@ const EditTaskScreen = () => {
     
     const date = new Date(year, monthIndex, day);
     
-    // Validate the date is actually valid
     if (isNaN(date.getTime())) return null;
     
     return date;
@@ -396,7 +395,7 @@ const EditTaskScreen = () => {
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map(m => m._id),
         priority: selectedPriority?.id || "medium",
-        difficulty: "medium", // Default difficulty
+        difficulty: "medium",
         startDate: parsedStartDate.toISOString(),
         dueDate: parsedDueDate.toISOString(),
         removedAttachments: removedAttachmentIds,
@@ -416,7 +415,7 @@ const EditTaskScreen = () => {
     }
   };
 
-  // Subtask handlers
+
   const handleAddSubtask = async (title) => {
     setIsAddingSubtask(true);
     try {
@@ -705,6 +704,11 @@ const EditTaskScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <HeaderWithBackButton title="Edit Task" onBackPress={() => navigation.goBack()} />
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
         <View style={styles.contentWrapper}>
@@ -827,10 +831,12 @@ const EditTaskScreen = () => {
                 editable={true}
               />
               
-              <AddSubtaskInput 
-                onAddSubtask={handleAddSubtask}
-                isLoading={isAddingSubtask}
-              />
+              {canManageTasks && (
+                <AddSubtaskInput 
+                  onAddSubtask={handleAddSubtask}
+                  isLoading={isAddingSubtask}
+                />
+              )}
             </View>
           </View>
         </View>
@@ -906,6 +912,7 @@ const EditTaskScreen = () => {
 
       {renderCalendarModal()}
       {renderConfirmDialog()}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
