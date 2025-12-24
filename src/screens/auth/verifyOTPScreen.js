@@ -1,30 +1,32 @@
-// src/screens/auth/VerifyOTPScreen.js
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import SecuritySafeIcon from "../../../assets/icons/security_safe.svg";
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
-import Colors from "../../styles/color";
+import authService from "../../services/authService";
+import AppColors from "../../styles/color";
 
 const VerifyOTPScreen = ({ navigation, route }) => {
   const { email } = route.params;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef([]);
 
-  // Timer for resend code
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -33,21 +35,18 @@ const VerifyOTPScreen = ({ navigation, route }) => {
   }, [resendTimer]);
 
   const handleOtpChange = (value, index) => {
-    // Only allow numbers
     if (value && !/^\d+$/.test(value)) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleKeyPress = (e, index) => {
-    // Handle backspace
     if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -64,16 +63,20 @@ const VerifyOTPScreen = ({ navigation, route }) => {
     setLoading(true);
 
     try {
-      // TODO: Call API to verify OTP
-      // await api.verifyOTP(email, otpCode);
+      const response = await authService.verifyOTP(email, otpCode);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // If OTP is valid, navigate to reset password screen
-      navigation.navigate("ResetPassword", { email, otp: otpCode });
+      if (response.success) {
+        navigation.navigate("ResetPassword", {
+          email,
+          resetToken: response.data.resetToken,
+        });
+      }
     } catch (error) {
-      Alert.alert("Error", "Invalid verification code. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Invalid verification code. Please try again."
+      );
+      // Clear OTP on error
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
@@ -82,126 +85,155 @@ const VerifyOTPScreen = ({ navigation, route }) => {
   };
 
   const handleResend = async () => {
-    if (resendTimer > 0) return;
+    if (resendTimer > 0 || resendLoading) return;
+
+    setResendLoading(true);
 
     try {
-      // TODO: Call API to resend OTP
-      // await api.forgotPassword(email);
+      const response = await authService.resendOTP(email);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      Alert.alert("Success", "Verification code has been resent to your email");
-      setResendTimer(60);
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      if (response.success) {
+        Alert.alert("Success", "New verification code sent to your email");
+        setResendTimer(60);
+        setOtp(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to resend code. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Failed to resend code. Please try again."
+      );
+    } finally {
+      setResendLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.topSection} />
+
+        <View style={styles.bottomSheet}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.headerContainerWithIcon}>
-          <SecuritySafeIcon width={60} height={60} />
-          <AuthHeader
-            title="Verify Code"
-            subtitle={`Enter the 6-digit code sent to ${email}`}
-            showLogo={false}
-          />
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputRefs.current[index] = ref)}
-                style={[styles.otpInput, digit && styles.otpInputFilled]}
-                value={digit}
-                onChangeText={(value) => handleOtpChange(value, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                keyboardType="number-pad"
-                maxLength={1}
-                selectTextOnFocus
-              />
-            ))}
-          </View>
-
-          <AppButton
-            text={loading ? "Verifying..." : "Verify"}
-            onPress={handleVerify}
-            style={styles.verifyButton}
-            textStyle={styles.verifyButtonText}
-            disabled={loading || otp.join("").length !== 6}
-          />
-
-          {loading && (
-            <ActivityIndicator
-              size="small"
-              color= {Colors.primary}
-              style={styles.loader}
-            />
-          )}
-
-          <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>Didn't receive the code? </Text>
-            <TouchableOpacity onPress={handleResend} disabled={resendTimer > 0}>
-              <Text
-                style={[
-                  styles.resendLink,
-                  resendTimer > 0 && styles.resendLinkDisabled,
-                ]}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
               >
-                {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <View style={styles.iconContainer}>
+                  <SecuritySafeIcon width={60} height={60} />
+                </View>
+
+                <AuthHeader
+                  title="Verify Code"
+                  subtitle={`Enter the 6-digit code sent to ${email}`}
+                  showLogo={false}
+                />
+
+                <View style={styles.form}>
+                  <View style={styles.otpContainer}>
+                    {otp.map((digit, index) => (
+                      <TextInput
+                        key={index}
+                        ref={(ref) => (inputRefs.current[index] = ref)}
+                        style={[
+                          styles.otpInput,
+                          digit && styles.otpInputFilled,
+                        ]}
+                        value={digit}
+                        onChangeText={(value) => handleOtpChange(value, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                        keyboardType="number-pad"
+                        maxLength={1}
+                        selectTextOnFocus
+                      />
+                    ))}
+                  </View>
+
+                  <AppButton
+                    text={loading ? "Verifying..." : "Verify"}
+                    onPress={handleVerify}
+                    style={styles.verifyButton}
+                    textStyle={styles.verifyButtonText}
+                    disabled={loading || otp.join("").length !== 6}
+                  />
+
+                  <View style={styles.resendContainer}>
+                    <Text style={styles.resendText}>
+                      Didn't receive the code?{" "}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={handleResend}
+                      disabled={resendTimer > 0 || resendLoading}
+                    >
+                      <Text
+                        style={[
+                          styles.resendLink,
+                          (resendTimer > 0 || resendLoading) &&
+                            styles.resendLinkDisabled,
+                        ]}
+                      >
+                        {resendLoading
+                          ? "Sending..."
+                          : resendTimer > 0
+                          ? `Resend in ${resendTimer}s`
+                          : "Resend"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "Colors.gray",
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: "#1E1E2E",
   },
-  headerContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: "#1E1E2E",
+  },
+  topSection: {
+    height: "25%",
+    backgroundColor: "#1E1E2E",
     paddingHorizontal: 20,
-    paddingTop: 10,
-    backgroundColor: Colors.white,
+    justifyContent: "flex-end",
+    paddingBottom: 30,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    marginTop: -20,
+    overflow: "hidden",
   },
-  backButtonText: {
-    fontSize: 24,
-    color: Colors.black,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  iconContainer: {
+    alignItems: "center",
+    marginBottom: 20,
   },
   form: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    marginTop: 20,
   },
   otpContainer: {
     flexDirection: "row",
@@ -214,25 +246,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
     borderRadius: 12,
-    backgroundColor: Colors.white,
+    backgroundColor: "#FFFFFF",
     textAlign: "center",
     fontSize: 24,
     fontWeight: "600",
-    color: Colors.black,
+    color: "#1A1A1A",
   },
   otpInputFilled: {
-    borderColor: Colors.primary,
+    borderColor: AppColors.primary,
     borderWidth: 2,
   },
   verifyButton: {
     width: "100%",
-    height: 48,
-    borderRadius: 100,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.primary,
     marginTop: 20,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   verifyButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   loader: {
     marginTop: 20,
@@ -244,19 +283,15 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
-    color: "#666",
+    color: "#888888",
   },
   resendLink: {
     fontSize: 14,
-    color: Colors.primary,
-    fontWeight: "600",
+    color: AppColors.primary,
+    fontWeight: "bold",
   },
   resendLinkDisabled: {
-    color: Colors.primary,
-  },
-  headerContainerWithIcon: {
-    alignItems: "center",
-    backgroundColor: Colors.white,
+    color: "#999999",
   },
 });
 

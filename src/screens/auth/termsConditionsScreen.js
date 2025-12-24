@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../../styles/color";
 import AppButton from "../../components/appButton";
+import Back from "../../../assets/icons/back.svg";
 
 const TermsConditionsScreen = ({ navigation }) => {
   return (
@@ -19,7 +20,7 @@ const TermsConditionsScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.title}>
           Terms & Conditions and{"\n"}Privacy Policy

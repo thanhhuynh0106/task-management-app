@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../../styles/color";
 import AppButton from "../../components/appButton";
+import Back from "../../../assets/icons/back.svg";
+
 const PrivacyPolicyScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
@@ -18,7 +20,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Back width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.title}>Privacy Policy</Text>
       </View>

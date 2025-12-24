@@ -1,15 +1,15 @@
-// src/screens/auth/ResetPasswordScreen.js
 import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,10 +21,11 @@ import SecuritySafeIcon from "../../../assets/icons/security_safe.svg";
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
 import InputField from "../../components/auth/inputField";
-import Colors from "../../styles/color";
+import authService from "../../services/authService";
+import AppColors from "../../styles/color";
 
 const ResetPasswordScreen = ({ navigation, route }) => {
-  const { email, otp } = route.params;
+  const { email, resetToken } = route.params;
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,174 +56,221 @@ const ResetPasswordScreen = ({ navigation, route }) => {
     setLoading(true);
 
     try {
-      // TODO: Call API to reset password
-      // await api.resetPassword(email, otp, password);
+      const response = await authService.resetPassword(
+        email,
+        resetToken,
+        password
+      );
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      Alert.alert("Success", "Your password has been reset successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Navigate back to Sign In screen
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "SignIn" }],
-            });
-          },
-        },
-      ]);
+      if (response.success) {
+        Alert.alert(
+          "Success",
+          response.message || "Your password has been reset successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "SignIn" }],
+                });
+              },
+            },
+          ]
+        );
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to reset password. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Failed to reset password. Please try again."
+      );
+
+      // Nếu token hết hạn, quay lại màn hình forgot password
+      if (
+        error.error?.includes("expired") ||
+        error.error?.includes("Invalid")
+      ) {
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "ForgotPassword" }],
+          });
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.topSection} />
+
+        <View style={styles.bottomSheet}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                <View style={styles.iconContainer}>
+                  <SecuritySafeIcon width={60} height={60} />
+                </View>
+
+                <AuthHeader
+                  title="Reset Password"
+                  subtitle="Create your new password"
+                  showLogo={false}
+                />
+
+                <View style={styles.form}>
+                  <InputField
+                    name="password"
+                    icon={PasswordIcon}
+                    label="New Password"
+                    placeholder="Enter new password"
+                    control={control}
+                    error={errors.password}
+                    secureTextEntry={!showPassword}
+                    showToggle={true}
+                    onTogglePress={() => setShowPassword(!showPassword)}
+                    rightIcon={showPassword ? EyeIcon : EyeOffIcon}
+                    containerStyle={styles.inputContainer}
+                  />
+
+                  <InputField
+                    name="confirmPassword"
+                    icon={PasswordIcon}
+                    label="Confirm Password"
+                    placeholder="Confirm new password"
+                    control={control}
+                    error={errors.confirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    showToggle={true}
+                    onTogglePress={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
+                    rightIcon={showConfirmPassword ? EyeIcon : EyeOffIcon}
+                    containerStyle={styles.inputContainer}
+                  />
+
+                  <View style={styles.passwordRequirements}>
+                    <Text style={styles.requirementsTitle}>
+                      Password must contain:
+                    </Text>
+                    <Text style={styles.requirementItem}>
+                      • At least 6 characters
+                    </Text>
+                    <Text style={styles.requirementItem}>
+                      • Both uppercase and lowercase letters (recommended)
+                    </Text>
+                    <Text style={styles.requirementItem}>
+                      • At least one number (recommended)
+                    </Text>
+                  </View>
+
+                  <AppButton
+                    text={loading ? "Resetting..." : "Reset Password"}
+                    onPress={handleSubmit(onSubmit)}
+                    style={styles.resetButton}
+                    textStyle={styles.resetButtonText}
+                    disabled={loading}
+                  />
+                </View>
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-
-        <View style={styles.headerContainerWithIcon}>
-          <SecuritySafeIcon width={60} height={60} />
-          <AuthHeader
-            title="Reset Password"
-            subtitle="Create your new password"
-            showLogo={false}
-          />
-        </View>
-
-        <View style={styles.form}>
-          <InputField
-            name="password"
-            icon={PasswordIcon}
-            label="New Password"
-            placeholder="Enter new password"
-            control={control}
-            error={errors.password}
-            secureTextEntry={!showPassword}
-            showToggle={true}
-            onTogglePress={() => setShowPassword(!showPassword)}
-            rightIcon={showPassword ? EyeIcon : EyeOffIcon}
-          />
-
-          <InputField
-            name="confirmPassword"
-            icon={PasswordIcon}
-            label="Confirm Password"
-            placeholder="Confirm new password"
-            control={control}
-            error={errors.confirmPassword}
-            secureTextEntry={!showConfirmPassword}
-            showToggle={true}
-            onTogglePress={() => setShowConfirmPassword(!showConfirmPassword)}
-            rightIcon={showConfirmPassword ? EyeIcon : EyeOffIcon}
-          />
-
-          <View style={styles.passwordRequirements}>
-            <Text style={styles.requirementsTitle}>Password must contain:</Text>
-            <Text style={styles.requirementItem}>• At least 6 characters</Text>
-            <Text style={styles.requirementItem}>
-              • Both uppercase and lowercase letters (recommended)
-            </Text>
-            <Text style={styles.requirementItem}>
-              • At least one number (recommended)
-            </Text>
-          </View>
-
-          <AppButton
-            text={loading ? "Resetting..." : "Reset Password"}
-            onPress={handleSubmit(onSubmit)}
-            style={styles.resetButton}
-            textStyle={styles.resetButtonText}
-            disabled={loading}
-          />
-
-          {loading && (
-            <ActivityIndicator
-              size="small"
-              color={Colors.primary}
-              style={styles.loader}
-            />
-          )}
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.gray,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: "#1E1E2E",
   },
-  headerContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: "#1E1E2E",
+  },
+  topSection: {
+    height: "15%",
+    backgroundColor: "#1E1E2E",
     paddingHorizontal: 20,
-    paddingTop: 10,
-    backgroundColor: Colors.white,
+    justifyContent: "flex-end",
+    paddingBottom: 30,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    marginTop: -20,
+    overflow: "hidden",
   },
-  backButtonText: {
-    fontSize: 24,
-    color: Colors.black,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  iconContainer: {
+    alignItems: "center",
+    marginBottom: 20,
   },
   form: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    marginTop: 20,
+  },
+  inputContainer: {
+    marginBottom: 16,
   },
   passwordRequirements: {
-    backgroundColor: Colors.gray,
+    backgroundColor: "#F5F5F5",
     padding: 16,
     borderRadius: 12,
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: 10,
+    marginBottom: 20,
   },
   requirementsTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.black,
+    color: "#333",
     marginBottom: 8,
   },
   requirementItem: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#666",
-    lineHeight: 20,
+    marginBottom: 4,
   },
   resetButton: {
     width: "100%",
-    height: 48,
-    borderRadius: 100,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.primary,
+    marginTop: 10,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   resetButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   loader: {
     marginTop: 20,
-  },
-  headerContainerWithIcon: {
-    alignItems: "center",
-    backgroundColor: Colors.white,
   },
 });
 

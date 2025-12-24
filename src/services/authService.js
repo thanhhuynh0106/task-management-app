@@ -1,11 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiClient from './api';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "./api";
 
 const authService = {
   /**
    * Register new user
-   * @param {Object} userData - {email, password, role, profile}
-   * @returns {Promise<{token, user}>}
    */
   register: async (userData) => {
     try {
@@ -24,9 +22,6 @@ const authService = {
 
   /**
    * Login user
-   * @param {string} email
-   * @param {string} password
-   * @returns {Promise<{token, user}>}
    */
   login: async (email, password) => {
     try {
@@ -56,8 +51,66 @@ const authService = {
   },
 
   /**
+   * Request forgot password OTP
+   * @param {string} email
+   */
+  forgotPassword: async (email) => {
+    try {
+      const response = await apiClient.post("/auth/forgot-password", { email });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Verify OTP code
+   * @param {string} email
+   * @param {string} otp
+   */
+  verifyOTP: async (email, otp) => {
+    try {
+      const response = await apiClient.post("/auth/verify-otp", { email, otp });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Reset password with token
+   * @param {string} email
+   * @param {string} resetToken
+   * @param {string} newPassword
+   */
+  resetPassword: async (email, resetToken, newPassword) => {
+    try {
+      const response = await apiClient.post("/auth/reset-password", {
+        email,
+        resetToken,
+        newPassword,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Resend OTP code
+   * @param {string} email
+   */
+  resendOTP: async (email) => {
+    try {
+      const response = await apiClient.post("/auth/resend-otp", { email });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Get current user from API
-   * @returns {Promise<{user}>}
    */
   getCurrentUser: async () => {
     try {
@@ -75,7 +128,6 @@ const authService = {
 
   /**
    * Get stored user from AsyncStorage
-   * @returns {Promise<Object|null>}
    */
   getStoredUser: async () => {
     try {
@@ -89,7 +141,6 @@ const authService = {
 
   /**
    * Check if user is authenticated
-   * @returns {Promise<boolean>}
    */
   isAuthenticated: async () => {
     try {
@@ -102,7 +153,6 @@ const authService = {
 
   /**
    * Get auth token
-   * @returns {Promise<string|null>}
    */
   getToken: async () => {
     try {
@@ -113,9 +163,7 @@ const authService = {
   },
 
   /**
-   *  Update user profile
-   * @param {Object} data - {fullName, department, position, phone, avatar}
-   * @returns {Promise}
+   * Update user profile
    */
   updateProfile: async (data) => {
     try {
@@ -131,9 +179,6 @@ const authService = {
 
   /**
    * Change password
-   * @param {string} oldPassword
-   * @param {string} newPassword
-   * @returns {Promise}
    */
   changePassword: async (oldPassword, newPassword) => {
     try {
@@ -141,7 +186,6 @@ const authService = {
         oldPassword,
         newPassword,
       });
-      
       return response;
     } catch (error) {
       throw error;
@@ -150,4 +194,3 @@ const authService = {
 };
 
 export default authService;
-
