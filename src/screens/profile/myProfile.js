@@ -2,7 +2,6 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useMemo } from "react";
 import {
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 import ClickChange from "../../components/profile/clickChange";
 import ViewInf from "../../components/profile/viewInf";
 import Colors from "../../styles/color";
+import Avatar from "../../components/avatar";
 
 import {
   SafeAreaView,
@@ -28,7 +28,6 @@ import Key from "../../../assets/icons/setting-2.svg";
 import Mail from "../../../assets/icons/sms.svg";
 import Person from "../../../assets/icons/user.svg";
 
-import ProfilePic from "../../../assets/images/icon.png";
 import { useAuth } from "@/src/contexts/authContext";
 
 const AVATAR_SIZE = 90;
@@ -46,6 +45,10 @@ const MyProfile = () => {
     location: user?.profile?.department || "Department",
   };
 
+  // Avatar logic - giống userHeader
+  const avatarUrl = user?.profile?.avatar || null;
+  const avatarKey = "avt1";
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -57,12 +60,11 @@ const MyProfile = () => {
     ]);
   };
 
-
   const layoutConfig = useMemo(() => {
     const headerTotalHeight = HEADER_BASE_HEIGHT + insets.top;
-    const avatarTop = headerTotalHeight - (AVATAR_SIZE / 2);
-    const scrollPaddingTop = (AVATAR_SIZE / 2) + 20;
-    
+    const avatarTop = headerTotalHeight - AVATAR_SIZE / 2;
+    const scrollPaddingTop = AVATAR_SIZE / 2 + 20;
+
     return {
       headerTotalHeight,
       avatarTop,
@@ -75,9 +77,9 @@ const MyProfile = () => {
       <View
         style={[
           styles.header,
-          { 
+          {
             height: layoutConfig.headerTotalHeight,
-            paddingTop: insets.top + 12 
+            paddingTop: insets.top + 12,
           },
         ]}
       >
@@ -91,30 +93,38 @@ const MyProfile = () => {
         <View style={{ width: 24 }} />
       </View>
 
-      <Image 
-        source={ProfilePic} 
+      {/* Avatar - sử dụng component Avatar */}
+      <View
         style={[
-          styles.avatar,
+          styles.avatarContainer,
           {
             top: layoutConfig.avatarTop,
-            width: AVATAR_SIZE,
-            height: AVATAR_SIZE,
-            borderRadius: 24,
-          }
-        ]} 
-      />
+          },
+        ]}
+      >
+        <Avatar
+          url={avatarUrl}
+          name={avatarKey}
+          width={AVATAR_SIZE}
+          height={AVATAR_SIZE}
+          style={styles.avatarStyle}
+        />
+      </View>
 
-      <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>{profileData.name}</Text>
-            <Text style={styles.position}>{profileData.position}</Text>
-          </View>
-            <ScrollView 
-              contentContainerStyle={{
-                paddingBottom: 20,
-              }}
-              showsVerticalScrollIndicator={false}
-            >
+      <SafeAreaView
+        style={styles.container}
+        edges={["bottom", "left", "right"]}
+      >
+        <View style={styles.profileInfo}>
+          <Text style={styles.name}>{profileData.name}</Text>
+          <Text style={styles.position}>{profileData.position}</Text>
+        </View>
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: 20,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* CONTACT */}
           <Text style={styles.sectionHeader}>CONTACT</Text>
           <View style={styles.section}>
@@ -134,23 +144,17 @@ const MyProfile = () => {
           <Text style={styles.sectionHeader}>ACCOUNT</Text>
           <View style={styles.section}>
             <ClickChange
-              icon={
-                <Person width={20} height={20} style={styles.inputIcon} />
-              }
+              icon={<Person width={20} height={20} style={styles.inputIcon} />}
               title="Personal Data"
               onPress={() => navigation.navigate("PersonalData")}
             />
             <ClickChange
-              icon={
-                <Folder width={20} height={20} style={styles.inputIcon} />
-              }
+              icon={<Folder width={20} height={20} style={styles.inputIcon} />}
               title="Office Assets"
               onPress={() => navigation.navigate("OfficeAssets")}
             />
             <ClickChange
-              icon={
-                <Payroll width={20} height={20} style={styles.inputIcon} />
-              }
+              icon={<Payroll width={20} height={20} style={styles.inputIcon} />}
               title="Payroll & Tax"
               onPress={() => navigation.navigate("PayrollAndTax")}
             />
@@ -226,13 +230,17 @@ const styles = StyleSheet.create({
     alignContent: "center",
     alignItems: "center",
   },
-  avatar: {
+  // Avatar container để position absolute
+  avatarContainer: {
     position: "absolute",
     alignSelf: "center",
     zIndex: 10,
-    borderWidth: 4,
+  },
+  avatarStyle: {
+    borderWidth: 2,
     borderColor: "#F5F5F5",
     backgroundColor: Colors.white,
+    borderRadius: 45,
   },
   profileInfo: {
     alignItems: "center",

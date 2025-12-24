@@ -6,8 +6,8 @@ import { useAuth } from "../../../src/contexts/authContext";
 import Colors from "../../styles/color";
 import AppIcon from "../appIcon";
 import Avatar from "../avatar";
-import NotificationBadge from "./notificationBadge";
 import MessageBadge from "./messageBadge";
+import NotificationBadge from "./notificationBadge";
 
 const UserHeader = ({ navigation }) => {
   const { user, isLoading } = useAuth();
@@ -25,12 +25,12 @@ const UserHeader = ({ navigation }) => {
     );
   }
 
-  const displayName = user.profile?.fullName || user.email?.split("@")[0] || "User";
+  const displayName =
+    user.profile?.fullName || user.email?.split("@")[0] || "User";
   const email = user.email || "";
-  
-  const avatarUrl = user.profile?.avatar || user.avatar;
-  const avatarKey = user.profile?.avatarKey || "default"; 
 
+  const avatarUrl = user.profile?.avatar || null;
+  const avatarKey = "avt1";
   return (
     <View style={styles.container}>
       <Pressable
@@ -38,12 +38,7 @@ const UserHeader = ({ navigation }) => {
         onPress={() => navigation.navigate("Profile")}
       >
         <View style={styles.avatarWrapper}>
-          <Avatar
-            url={avatarUrl}        
-            name={avatarKey}       
-            width={46}
-            height={46}
-          />
+          <Avatar url={avatarUrl} name={avatarKey} width={46} height={46} />
           {/* {user.isOnline && <View style={styles.onlineDot} />} */}
         </View>
 
