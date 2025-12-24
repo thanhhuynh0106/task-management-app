@@ -3,11 +3,14 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,11 +24,12 @@ import AuthHeader from "../../components/auth/authHeader";
 import InputField from "../../components/auth/inputField";
 import LoadingSpinner from "../../components/loadingSpinner";
 import { useAuth } from "../../contexts/authContext";
-import Colors from "../../styles/color";
+import AppColors from "../../styles/color";
 
 const SignInScreen = ({ navigation }) => {
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const validationSchema = Yup.object({
@@ -51,32 +55,32 @@ const SignInScreen = ({ navigation }) => {
 
   const onSubmit = async (data) => {
     const { email, password } = data;
-
     setIsLoading(true);
     try {
       const result = await signIn(email.trim(), password.trim());
-
       if (!result.success) {
-        Alert.alert(
-          "Login Failed",
-          result.error || "Failed to sign in. Please try again."
-        );
+        Alert.alert("Login Failed", result.error || "Failed to sign in.");
         return;
       }
-
-      // Navigation is handled by authContext
-      Alert.alert("Success", "Login successful!");
     } catch (error) {
-      Alert.alert(
-        "Error",
-        error.message || "An error occurred. Please try again."
-      );
+      Alert.alert("Error", error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading spinner overlay
+  const Checkbox = ({ value, onValueChange }) => (
+    <TouchableOpacity
+      style={styles.checkboxContainer}
+      onPress={() => onValueChange(!value)}
+    >
+      <View style={[styles.checkbox, value && styles.checkboxChecked]}>
+        {value && <View style={styles.checkboxInner} />}
+      </View>
+      <Text style={styles.checkboxLabel}>Remember Me</Text>
+    </TouchableOpacity>
+  );
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -86,118 +90,259 @@ const SignInScreen = ({ navigation }) => {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <AuthHeader
-          title="Sign In"
-          subtitle="Sign in to my account"
-          showLogo={true}
-        />
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.topSection} />
 
-        <View style={styles.form}>
-          <InputField
-            name="email"
-            icon={EmailIcon}
-            label="Email"
-            placeholder="Enter your email"
-            control={control}
-            error={errors.email}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <InputField
-            name="password"
-            icon={PasswordIcon}
-            label="Password"
-            placeholder="Enter your password"
-            control={control}
-            error={errors.password}
-            secureTextEntry={!showPassword}
-            showToggle={true}
-            onTogglePress={() => setShowPassword(!showPassword)}
-            rightIcon={showPassword ? EyeIcon : EyeOffIcon}
-          />
-
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate("ForgotPassword")}
+        <View style={styles.bottomSheet}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-          </TouchableOpacity>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                <AuthHeader
+                  title="Sign In"
+                  subtitle="Welcome back! Please sign in to your account."
+                  showLogo={false}
+                />
 
-          <AppButton
-            text="Sign in"
-            onPress={handleSubmit(onSubmit)}
-            style={styles.signInButton}
-            textStyle={styles.signInButtonText}
-            disabled={isLoading}
-          />
+                <View style={styles.form}>
+                  <InputField
+                    name="email"
+                    icon={EmailIcon}
+                    label="Email"
+                    placeholder="My Email"
+                    control={control}
+                    error={errors.email}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    containerStyle={styles.inputContainer}
+                  />
 
-          <View style={styles.signUpContainer}>
-            <Text style={styles.signUpText}>Don&apos;t have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-              <Text style={styles.signUpLink}>Sign up</Text>
-            </TouchableOpacity>
-          </View>
+                  <InputField
+                    name="password"
+                    icon={PasswordIcon}
+                    label="Password"
+                    placeholder="My Password"
+                    control={control}
+                    error={errors.password}
+                    secureTextEntry={!showPassword}
+                    showToggle={true}
+                    onTogglePress={() => setShowPassword(!showPassword)}
+                    rightIcon={showPassword ? EyeIcon : EyeOffIcon}
+                    containerStyle={styles.inputContainer}
+                  />
+
+                  <View style={styles.rowSpaceBetween}>
+                    <Checkbox
+                      value={rememberMe}
+                      onValueChange={setRememberMe}
+                    />
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("ForgotPassword")}
+                    >
+                      <Text style={styles.forgotPasswordText}>
+                        Forgot Password
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <AppButton
+                    text="Sign In"
+                    onPress={handleSubmit(onSubmit)}
+                    style={styles.signInButton}
+                    textStyle={styles.signInButtonText}
+                    disabled={isLoading}
+                  />
+
+                  <View style={styles.dividerContainer}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  <TouchableOpacity style={styles.outlineButton}>
+                    <Text style={styles.outlineButtonText}>
+                      Sign in With Employee ID
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.outlineButton, { marginTop: 12 }]}
+                  >
+                    <Text style={styles.outlineButtonText}>
+                      Sign in With Phone
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.signUpContainer}>
+                    <Text style={styles.signUpText}>
+                      Don't have an account?{" "}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("SignUp")}
+                    >
+                      <Text style={styles.signUpLink}>Sign Up Here</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.gray,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: "#1E1E2E",
   },
-  form: {
+  container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    backgroundColor: "#1E1E2E",
+  },
+  topSection: {
+    height: "15%",
+    backgroundColor: "#1E1E2E",
+  },
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    marginTop: -20,
+    overflow: "hidden",
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.gray,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: AppColors.white,
   },
-  forgotPassword: {
-    alignSelf: "flex-end",
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  form: {
+    flex: 1,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  rowSpaceBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 24,
     marginTop: 8,
   },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1.5,
+    borderColor: AppColors.primary,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  checkboxChecked: {
+    backgroundColor: AppColors.primary,
+  },
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    backgroundColor: "#FFF",
+    borderRadius: 2,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: "#888888",
+    fontWeight: "500",
+  },
   forgotPasswordText: {
-    color: Colors.primary,
+    color: AppColors.primary,
     fontSize: 14,
     fontWeight: "600",
   },
   signInButton: {
     width: "100%",
-    height: 48,
-    borderRadius: 100,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.primary,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   signInButtonText: {
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E5E5E5",
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: "#999",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  outlineButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+    backgroundColor: "#fff",
+  },
+  outlineButtonText: {
+    fontSize: 15,
     fontWeight: "600",
+    color: AppColors.primary,
   },
   signUpContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 24,
+    marginTop: 30,
   },
   signUpText: {
     fontSize: 14,
-    color: "#666",
+    color: "#888888",
+    fontWeight: "500",
   },
   signUpLink: {
     fontSize: 14,
-    color: Colors.primary,
-    fontWeight: "600",
+    color: AppColors.primary,
+    fontWeight: "bold",
   },
 });
 

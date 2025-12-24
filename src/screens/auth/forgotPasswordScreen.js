@@ -1,15 +1,17 @@
-// src/screens/auth/ForgotPasswordScreen.js
 import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,7 +21,7 @@ import SecuritySafeIcon from "../../../assets/icons/security_safe.svg";
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
 import InputField from "../../components/auth/inputField";
-import Colors from "../../styles/color";
+import AppColors from "../../styles/color";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -46,13 +48,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // TODO: Call API to send OTP to email
-      // await api.forgotPassword(email);
-
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Navigate to OTP verification screen with email
       navigation.navigate("VerifyOTP", { email: email.trim() });
     } catch (error) {
       Alert.alert(
@@ -65,106 +61,138 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.container}>
+        <View style={styles.topSection} />
+
+        <View style={styles.bottomSheet}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                <View style={styles.iconContainer}>
+                  <SecuritySafeIcon width={60} height={60} />
+                </View>
+
+                <AuthHeader
+                  title="Forgot Password"
+                  subtitle="Enter your email to receive a verification code"
+                  showLogo={false}
+                />
+
+                <View style={styles.form}>
+                  <InputField
+                    name="email"
+                    icon={EmailIcon}
+                    label="Email"
+                    placeholder="Enter your email"
+                    control={control}
+                    error={errors.email}
+                    keyboardType="email-address"
+                    containerStyle={styles.inputContainer}
+                  />
+
+                  <AppButton
+                    text={loading ? "Sending..." : "Send Verification Code"}
+                    onPress={handleSubmit(onSubmit)}
+                    style={styles.submitButton}
+                    textStyle={styles.submitButtonText}
+                    disabled={loading}
+                  />
+
+                  {loading && (
+                    <ActivityIndicator
+                      size="small"
+                      color={AppColors.primary}
+                      style={styles.loader}
+                    />
+                  )}
+
+                  <View style={styles.backToSignInContainer}>
+                    <Text style={styles.backToSignInText}>
+                      Remember your password?{" "}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("SignIn")}
+                    >
+                      <Text style={styles.backToSignInLink}>Sign in</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
-
-        <View style={styles.headerContainerWithIcon}>
-          <SecuritySafeIcon width={60} height={60} />
-          <AuthHeader
-            title="Forgot Password"
-            subtitle="Enter your email to receive a verification code"
-            showLogo={false}
-          />
-        </View>
-
-        <View style={styles.form}>
-          <InputField
-            name="email"
-            icon={EmailIcon}
-            label="Email"
-            placeholder="Enter your email"
-            control={control}
-            error={errors.email}
-            keyboardType="email-address"
-          />
-
-          <AppButton
-            text={loading ? "Sending..." : "Send Verification Code"}
-            onPress={handleSubmit(onSubmit)}
-            style={styles.submitButton}
-            textStyle={styles.submitButtonText}
-            disabled={loading}
-          />
-
-          {loading && (
-            <ActivityIndicator
-              size="small"
-              color={Colors.primary}
-              style={styles.loader}
-            />
-          )}
-
-          <View style={styles.backToSignInContainer}>
-            <Text style={styles.backToSignInText}>
-              Remember your password?{" "}
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
-              <Text style={styles.backToSignInLink}>Sign in</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.gray,
-  },
   safeArea: {
     flex: 1,
+    backgroundColor: "#1E1E2E",
   },
-  headerContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: "#1E1E2E",
+  },
+  topSection: {
+    height: "25%",
+    backgroundColor: "#1E1E2E",
     paddingHorizontal: 20,
-    paddingTop: 10,
-    backgroundColor: Colors.white,
+    justifyContent: "flex-end",
+    paddingBottom: 30,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  bottomSheet: {
+    flex: 1,
+    backgroundColor: AppColors.white,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    marginTop: -20,
+    overflow: "hidden",
   },
-  backButtonText: {
-    fontSize: 24,
-    color: Colors.black,
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  iconContainer: {
+    alignItems: "center",
+    marginBottom: 20,
   },
   form: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    marginTop: 20,
+  },
+  inputContainer: {
+    marginBottom: 16,
   },
   submitButton: {
     width: "100%",
-    height: 48,
-    borderRadius: 100,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: AppColors.primary,
     marginTop: 20,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   submitButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   loader: {
     marginTop: 20,
@@ -176,16 +204,12 @@ const styles = StyleSheet.create({
   },
   backToSignInText: {
     fontSize: 14,
-    color: "#666",
+    color: "#888888",
   },
   backToSignInLink: {
     fontSize: 14,
-    color: Colors.primary,
-    fontWeight: "600",
-  },
-  headerContainerWithIcon: {
-    alignItems: "center",
-    backgroundColor: Colors.white,
+    color: AppColors.primary,
+    fontWeight: "bold",
   },
 });
 

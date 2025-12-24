@@ -1,5 +1,5 @@
 const getApiUrl = () => {
-  return 'http://192.168.11.190:3000/api';
+  return "http://192.168.80.1:3000/api";
 };
 
 export const API_CONFIG = {
@@ -8,9 +8,3 @@ export const API_CONFIG = {
 };
 
 export default API_CONFIG;
-
-
-
-
-
-
