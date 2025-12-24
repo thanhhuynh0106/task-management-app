@@ -4,7 +4,7 @@ const getApiUrl = () => {
 
 export const API_CONFIG = {
   BASE_URL: getApiUrl(),
-  TIMEOUT: 10000,
+  TIMEOUT: 30000,
 };
 
 export default API_CONFIG;

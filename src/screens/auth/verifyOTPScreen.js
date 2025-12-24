@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,12 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import SecuritySafeIcon from "../../../assets/icons/security_safe.svg";
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
+import authService from "../../services/authService";
 import AppColors from "../../styles/color";
 
 const VerifyOTPScreen = ({ navigation, route }) => {
   const { email } = route.params;
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef([]);
 
@@ -62,10 +63,20 @@ const VerifyOTPScreen = ({ navigation, route }) => {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      navigation.navigate("ResetPassword", { email, otp: otpCode });
+      const response = await authService.verifyOTP(email, otpCode);
+
+      if (response.success) {
+        navigation.navigate("ResetPassword", {
+          email,
+          resetToken: response.data.resetToken,
+        });
+      }
     } catch (error) {
-      Alert.alert("Error", "Invalid verification code. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Invalid verification code. Please try again."
+      );
+      // Clear OTP on error
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
@@ -74,16 +85,26 @@ const VerifyOTPScreen = ({ navigation, route }) => {
   };
 
   const handleResend = async () => {
-    if (resendTimer > 0) return;
+    if (resendTimer > 0 || resendLoading) return;
+
+    setResendLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      Alert.alert("Success", "Verification code has been resent to your email");
-      setResendTimer(60);
-      setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      const response = await authService.resendOTP(email);
+
+      if (response.success) {
+        Alert.alert("Success", "New verification code sent to your email");
+        setResendTimer(60);
+        setOtp(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to resend code. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Failed to resend code. Please try again."
+      );
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -143,29 +164,24 @@ const VerifyOTPScreen = ({ navigation, route }) => {
                     disabled={loading || otp.join("").length !== 6}
                   />
 
-                  {loading && (
-                    <ActivityIndicator
-                      size="small"
-                      color={AppColors.primary}
-                      style={styles.loader}
-                    />
-                  )}
-
                   <View style={styles.resendContainer}>
                     <Text style={styles.resendText}>
                       Didn't receive the code?{" "}
                     </Text>
                     <TouchableOpacity
                       onPress={handleResend}
-                      disabled={resendTimer > 0}
+                      disabled={resendTimer > 0 || resendLoading}
                     >
                       <Text
                         style={[
                           styles.resendLink,
-                          resendTimer > 0 && styles.resendLinkDisabled,
+                          (resendTimer > 0 || resendLoading) &&
+                            styles.resendLinkDisabled,
                         ]}
                       >
-                        {resendTimer > 0
+                        {resendLoading
+                          ? "Sending..."
+                          : resendTimer > 0
                           ? `Resend in ${resendTimer}s`
                           : "Resend"}
                       </Text>

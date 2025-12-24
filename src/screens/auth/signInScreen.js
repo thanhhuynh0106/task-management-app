@@ -1,25 +1,14 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Yup from "yup";
 import EmailIcon from "../../../assets/icons/email.svg";
 import EyeOffIcon from "../../../assets/icons/eye-off.svg";
 import EyeIcon from "../../../assets/icons/eye.svg";
 import PasswordIcon from "../../../assets/icons/password.svg";
 import AppButton from "../../components/appButton";
+import AnimatedBottomSheet from "../../components/auth/animatedBottomSheet";
 import AuthHeader from "../../components/auth/authHeader";
 import InputField from "../../components/auth/inputField";
 import LoadingSpinner from "../../components/loadingSpinner";
@@ -90,150 +79,88 @@ const SignInScreen = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View style={styles.container}>
-        <View style={styles.topSection} />
+    <AnimatedBottomSheet topSectionHeight="15%">
+      <AuthHeader
+        title="Sign In"
+        subtitle="Welcome back! Please sign in to your account."
+        showLogo={false}
+      />
 
-        <View style={styles.bottomSheet}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      <View style={styles.form}>
+        <InputField
+          name="email"
+          icon={EmailIcon}
+          label="Email"
+          placeholder="My Email"
+          control={control}
+          error={errors.email}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          containerStyle={styles.inputContainer}
+        />
+
+        <InputField
+          name="password"
+          icon={PasswordIcon}
+          label="Password"
+          placeholder="My Password"
+          control={control}
+          error={errors.password}
+          secureTextEntry={!showPassword}
+          showToggle={true}
+          onTogglePress={() => setShowPassword(!showPassword)}
+          rightIcon={showPassword ? EyeIcon : EyeOffIcon}
+          containerStyle={styles.inputContainer}
+        />
+
+        <View style={styles.rowSpaceBetween}>
+          <Checkbox value={rememberMe} onValueChange={setRememberMe} />
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
           >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                bounces={false}
-              >
-                <AuthHeader
-                  title="Sign In"
-                  subtitle="Welcome back! Please sign in to your account."
-                  showLogo={false}
-                />
+            <Text style={styles.forgotPasswordText}>Forgot Password</Text>
+          </TouchableOpacity>
+        </View>
 
-                <View style={styles.form}>
-                  <InputField
-                    name="email"
-                    icon={EmailIcon}
-                    label="Email"
-                    placeholder="My Email"
-                    control={control}
-                    error={errors.email}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    containerStyle={styles.inputContainer}
-                  />
+        <AppButton
+          text="Sign In"
+          onPress={handleSubmit(onSubmit)}
+          style={styles.signInButton}
+          textStyle={styles.signInButtonText}
+          disabled={isLoading}
+        />
 
-                  <InputField
-                    name="password"
-                    icon={PasswordIcon}
-                    label="Password"
-                    placeholder="My Password"
-                    control={control}
-                    error={errors.password}
-                    secureTextEntry={!showPassword}
-                    showToggle={true}
-                    onTogglePress={() => setShowPassword(!showPassword)}
-                    rightIcon={showPassword ? EyeIcon : EyeOffIcon}
-                    containerStyle={styles.inputContainer}
-                  />
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
-                  <View style={styles.rowSpaceBetween}>
-                    <Checkbox
-                      value={rememberMe}
-                      onValueChange={setRememberMe}
-                    />
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate("ForgotPassword")}
-                    >
-                      <Text style={styles.forgotPasswordText}>
-                        Forgot Password
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+        <TouchableOpacity style={styles.outlineButton}>
+          <Text style={styles.outlineButtonText}>Sign in With Employee ID</Text>
+        </TouchableOpacity>
 
-                  <AppButton
-                    text="Sign In"
-                    onPress={handleSubmit(onSubmit)}
-                    style={styles.signInButton}
-                    textStyle={styles.signInButtonText}
-                    disabled={isLoading}
-                  />
+        <TouchableOpacity style={[styles.outlineButton, { marginTop: 12 }]}>
+          <Text style={styles.outlineButtonText}>Sign in With Phone</Text>
+        </TouchableOpacity>
 
-                  <View style={styles.dividerContainer}>
-                    <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR</Text>
-                    <View style={styles.dividerLine} />
-                  </View>
-
-                  <TouchableOpacity style={styles.outlineButton}>
-                    <Text style={styles.outlineButtonText}>
-                      Sign in With Employee ID
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.outlineButton, { marginTop: 12 }]}
-                  >
-                    <Text style={styles.outlineButtonText}>
-                      Sign in With Phone
-                    </Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.signUpContainer}>
-                    <Text style={styles.signUpText}>
-                      Don't have an account?{" "}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate("SignUp")}
-                    >
-                      <Text style={styles.signUpLink}>Sign Up Here</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </ScrollView>
-            </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
+        <View style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+            <Text style={styles.signUpLink}>Sign Up Here</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </AnimatedBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#1E1E2E",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#1E1E2E",
-  },
-  topSection: {
-    height: "15%",
-    backgroundColor: "#1E1E2E",
-  },
-  bottomSheet: {
-    flex: 1,
-    backgroundColor: AppColors.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    marginTop: -20,
-    overflow: "hidden",
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: AppColors.white,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 40,
   },
   form: {
     flex: 1,

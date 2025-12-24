@@ -2,7 +2,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-  ActivityIndicator,
   Alert,
   Keyboard,
   KeyboardAvoidingView,
@@ -22,10 +21,11 @@ import SecuritySafeIcon from "../../../assets/icons/security_safe.svg";
 import AppButton from "../../components/appButton";
 import AuthHeader from "../../components/auth/authHeader";
 import InputField from "../../components/auth/inputField";
+import authService from "../../services/authService";
 import AppColors from "../../styles/color";
 
 const ResetPasswordScreen = ({ navigation, route }) => {
-  const { email, otp } = route.params;
+  const { email, resetToken } = route.params;
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -56,21 +56,47 @@ const ResetPasswordScreen = ({ navigation, route }) => {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await authService.resetPassword(
+        email,
+        resetToken,
+        password
+      );
 
-      Alert.alert("Success", "Your password has been reset successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "SignIn" }],
-            });
-          },
-        },
-      ]);
+      if (response.success) {
+        Alert.alert(
+          "Success",
+          response.message || "Your password has been reset successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "SignIn" }],
+                });
+              },
+            },
+          ]
+        );
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to reset password. Please try again.");
+      Alert.alert(
+        "Error",
+        error.error || "Failed to reset password. Please try again."
+      );
+
+      // Nếu token hết hạn, quay lại màn hình forgot password
+      if (
+        error.error?.includes("expired") ||
+        error.error?.includes("Invalid")
+      ) {
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "ForgotPassword" }],
+          });
+        }, 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -157,14 +183,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
                     textStyle={styles.resetButtonText}
                     disabled={loading}
                   />
-
-                  {loading && (
-                    <ActivityIndicator
-                      size="small"
-                      color={AppColors.primary}
-                      style={styles.loader}
-                    />
-                  )}
                 </View>
               </ScrollView>
             </TouchableWithoutFeedback>

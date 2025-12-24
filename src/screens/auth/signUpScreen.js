@@ -143,7 +143,7 @@ const SignUpScreen = ({ navigation }) => {
                     name="fullName"
                     icon={UserIcon || CompanyIcon}
                     label="Full Name"
-                    placeholder="Lionel Messi"
+                    placeholder="Enter your full name"
                     control={control}
                     error={errors.fullName}
                     autoCapitalize="words"
@@ -154,7 +154,7 @@ const SignUpScreen = ({ navigation }) => {
                     name="email"
                     icon={EmailIcon}
                     label="Email"
-                    placeholder="mdt@gmail.com"
+                    placeholder="Enter your email"
                     control={control}
                     error={errors.email}
                     keyboardType="email-address"
@@ -165,7 +165,7 @@ const SignUpScreen = ({ navigation }) => {
                     name="employeeId"
                     icon={CompanyIcon}
                     label="Employee ID"
-                    placeholder="E12345"
+                    placeholder="Enter your employee ID"
                     control={control}
                     error={errors.employeeId}
                     containerStyle={styles.inputContainer}
