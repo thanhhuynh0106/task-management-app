@@ -11,6 +11,7 @@ import TaskInac from "../../assets/icons/task_inac.svg";
 import TeamAc from "../../assets/icons/team_ac.svg";
 import TeamInac from "../../assets/icons/team_inac.svg";
 import ClockinScreen from "../screens/clockinScreen";
+import DownloadScreen from "../screens/downloadScreen";
 import HomeScreen from "../screens/homeScreen";
 import LeaveScreen from "../screens/leaveScreen";
 import TaskNavigator from "./taskNavigator";
@@ -88,6 +89,15 @@ const BottomNavigator = () => {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         focused ? <LeaveAc width={28} height={28} /> : <LeaveInac width={28} height={28} />
+                    )
+                }}
+            />
+            <Bottom.Screen
+                name="Download"
+                component={DownloadScreen}
+                options={{
+                    tabBarIcon: ({ focused }) => (
+                        focused ? <TaskAc width={28} height={28} /> : <TaskInac width={28} height={28} />
                     )
                 }}
             />

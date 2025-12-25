@@ -21,7 +21,6 @@ const TaskNavigator = () => {
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
       <Stack.Screen name="EditTask" component={EditTaskSCreen} />
       <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
-
     </Stack.Navigator>
   );
 };
