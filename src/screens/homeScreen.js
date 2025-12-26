@@ -1,16 +1,31 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNotificationStore, useTaskStore } from "../../store/index";
-import TodayFocusCard from '../components/home/todayFocusCard';
+import TodayFocusCard from "../components/home/todayFocusCard";
 import UserHeader from "../components/home/userHeader";
 import WelcomeCard from "../components/home/welcomeCard";
+import HRDashboardContent from "../components/home/hrDashboardContent";
+import { useAuth } from "../contexts/authContext";
 import Colors from "../styles/color";
 
 const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const { user } = useAuth();
+  const isHR = user?.role === "hr_manager";
+
+  const hrDashboardRefresh = useRef(null);
 
   const { fetchMyTasks, fetchTaskStats } = useTaskStore();
   const { fetchUnreadCount, fetchNotifications } = useNotificationStore();
@@ -22,28 +37,35 @@ const HomeScreen = ({ navigation }) => {
       const interval = setInterval(() => {
         fetchHomeData(true);
       }, 60000);
-      
+
       return () => clearInterval(interval);
     }, [])
   );
 
-
   useEffect(() => {
     fetchUnreadCount();
   }, []);
-  
+
   const fetchHomeData = async (silent = false) => {
     if (!silent) setLoading(true);
-    
+
     try {
-      await Promise.all([
-        fetchMyTasks({ page: 1, limit: 10, status: 'in_progress' }),
-        fetchTaskStats(),
-        fetchUnreadCount(),
-        fetchNotifications({ page: 1, limit: 5 }),
-      ]);
+      if (isHR) {
+        // HR only needs notifications
+        await Promise.all([
+          fetchUnreadCount(),
+          fetchNotifications({ page: 1, limit: 5 }),
+        ]);
+      } else {
+        await Promise.all([
+          fetchMyTasks({ page: 1, limit: 10, status: "in_progress" }),
+          fetchTaskStats(),
+          fetchUnreadCount(),
+          fetchNotifications({ page: 1, limit: 5 }),
+        ]);
+      }
     } catch (error) {
-      console.error('Error fetching home data:', error);
+      console.error("Error fetching home data:", error);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -52,16 +74,20 @@ const HomeScreen = ({ navigation }) => {
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchHomeData();
+    // Refresh HR Dashboard if available
+    if (isHR && hrDashboardRefresh.current) {
+      await hrDashboardRefresh.current();
+    }
     setRefreshing(false);
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar 
-          backgroundColor={Colors.white} 
-          barStyle="dark-content" 
-          translucent={true} 
+        <StatusBar
+          backgroundColor={Colors.white}
+          barStyle="dark-content"
+          translucent={true}
         />
         <UserHeader navigation={navigation} />
         <View style={styles.loadingContainer}>
@@ -74,27 +100,33 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar 
-        backgroundColor={Colors.white} 
-        barStyle="dark-content" 
-        translucent={true} 
+      <StatusBar
+        backgroundColor={Colors.white}
+        barStyle="dark-content"
+        translucent={true}
       />
       <UserHeader navigation={navigation} />
 
       <ScrollView
         style={styles.body}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
-            colors={[Colors.primary]} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
             tintColor={Colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        <WelcomeCard />
-        <TodayFocusCard navigation={navigation} />
+        {isHR ? (
+          <HRDashboardContent onRefresh={hrDashboardRefresh} />
+        ) : (
+          <>
+            <WelcomeCard />
+            <TodayFocusCard navigation={navigation} />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -103,23 +135,23 @@ const HomeScreen = ({ navigation }) => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: Colors.white 
+  container: {
+    flex: 1,
+    backgroundColor: Colors.white,
   },
-  body: { 
-    backgroundColor: Colors.secondary 
+  body: {
+    backgroundColor: Colors.secondary,
   },
-  loadingContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    backgroundColor: Colors.secondary, 
-    gap: 12 
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.secondary,
+    gap: 12,
   },
-  loadingText: { 
-    fontSize: 14, 
-    color: Colors.primary, 
-    fontWeight: '500' 
+  loadingText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "500",
   },
 });
