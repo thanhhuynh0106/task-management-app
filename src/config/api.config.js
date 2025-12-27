@@ -1,5 +1,5 @@
 const getApiUrl = () => {
-  return "http://192.168.80.1:3000/api";
+  return "http://192.168.100.205:3000/api";
 };
 
 export const API_URL = getApiUrl();

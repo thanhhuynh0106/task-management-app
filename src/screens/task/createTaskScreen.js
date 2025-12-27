@@ -73,6 +73,11 @@ const CreateTaskScreen = ({ navigation }) => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [tempTeam, setTempTeam] = useState(null);
+
   
   useEffect(() => {
     if (!canManageTasks?.()) {
@@ -85,15 +90,34 @@ const CreateTaskScreen = ({ navigation }) => {
   }, [canManageTasks]);
 
   useEffect(() => {
-    fetchTeamMembers();
+    fetchTeams();
   }, []);
+
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [selectedTeam?._id, user?.role, user?.teamId]);
+
+  const fetchTeams = async () => {
+    if (user?.role !== "hr_manager") return;
+    try {
+      const response = await teamService.getAllTeams({ page: 1, limit: 200 });
+      setTeams(response?.data || []);
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+      Alert.alert("Error", "Failed to load teams");
+    }
+  };
 
   const fetchTeamMembers = async () => {
     setLoadingMembers(true);
     try {
       let response;
       if (user?.role === "hr_manager") {
-        response = await teamService.getAllMembers();
+        if (!selectedTeam?._id) {
+          setTeamMembers([]);
+          return;
+        }
+        response = await teamService.getTeamMembers(selectedTeam._id);
       } else if (user?.role === "team_lead" && user?.teamId) {
         response = await teamService.getTeamMembers(user.teamId);
       }
@@ -280,6 +304,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const validateTaskData = () => {
     if (!taskTitle.trim()) return { valid: false, message: 'Task title is required' };
     if (selectedMembers.length === 0) return { valid: false, message: 'At least one assignee is required' };
+    if (user?.role === 'hr_manager' && !selectedTeam?._id) return { valid: false, message: 'Team is required' };
     if (!startDate) return { valid: false, message: 'Start date is required' };
     if (!dueDate) return { valid: false, message: 'Due date is required' };
     if (new Date(dueDate) < new Date(startDate)) return { valid: false, message: 'Due date cannot be earlier than start date' };
@@ -424,11 +449,12 @@ const CreateTaskScreen = ({ navigation }) => {
     setIsUploading(true);
   
     try {
+      const resolvedTeamId = user?.role === 'hr_manager' ? selectedTeam?._id : user?.teamId;
       const taskPayload = {
         title: taskTitle.trim(),
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map((m) => m._id),
-        teamId: user?.teamId,
+        teamId: resolvedTeamId,
         priority: selectedPriority?.id || "medium",
         difficulty: "medium",
         attachments: [],
@@ -538,13 +564,13 @@ const CreateTaskScreen = ({ navigation }) => {
                     styles.modalItem,
                     (multiSelect
                       ? isMemberSelected(item, selectedItems)
-                      : selectedItems?.id === item.id) && styles.modalItemSelected,
+                      : (selectedItems?._id || selectedItems?.id) === (item._id || item.id)) && styles.modalItemSelected,
                   ]}
                   onPress={() => onSelectItem(item)}
                 >
                   {renderItem(item, multiSelect
                     ? isMemberSelected(item, selectedItems)
-                    : selectedItems?.id === item.id)}
+                    : (selectedItems?._id || selectedItems?.id) === (item._id || item.id))}
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -761,6 +787,19 @@ const CreateTaskScreen = ({ navigation }) => {
             {renderDateSelector("Start Date", startDate, "start")}
             {renderDateSelector("Due Date", dueDate, "due")}
 
+            {/* Team (HR only) */}
+            {user?.role === "hr_manager" &&
+              renderSelector(
+                "Team",
+                selectedTeam?.name,
+                "Select team",
+                () => {
+                  setTempTeam(selectedTeam);
+                  setShowTeamModal(true);
+                },
+                Category
+              )}
+
             {/* Assign To */}
             {renderSelector(
               "Assign to",
@@ -769,6 +808,10 @@ const CreateTaskScreen = ({ navigation }) => {
                 : null,
               "Select members",
               () => {
+                if (user?.role === "hr_manager" && !selectedTeam?._id) {
+                  Alert.alert("Validation Error", "Please select a team first");
+                  return;
+                }
                 setTempMembers(selectedMembers);
                 setShowMemberModal(true);
               },
@@ -862,6 +905,37 @@ const CreateTaskScreen = ({ navigation }) => {
           </View>
         ),
         true
+      )}
+
+      {/* Team Modal (HR only) */}
+      {renderBottomModal(
+        showTeamModal,
+        () => setShowTeamModal(false),
+        () => {
+          setSelectedTeam(tempTeam);
+          setSelectedMembers([]);
+          setTempMembers([]);
+          setShowTeamModal(false);
+        },
+        teams,
+        tempTeam,
+        setTempTeam,
+        "Select Team",
+        (item, isSelected) => (
+          <View style={styles.modalItemContent}>
+            <View>
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
+                {item.name}
+              </Text>
+              <Text style={styles.itemSubtext}>{item.description || ""}</Text>
+            </View>
+            {isSelected && (
+              <View style={styles.selectedIndicator}>
+                <Text style={styles.checkmark}>✓</Text>
+              </View>
+            )}
+          </View>
+        )
       )}
 
       {/* Priority Modal */}

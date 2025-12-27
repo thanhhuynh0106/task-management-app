@@ -3,16 +3,19 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Avatar from "../avatar";
 import Colors from "../../styles/color";
 
-const UserCard = memo(({ user, isSelected, onToggle, isAlreadyMember }) => {
+const UserCard = memo(({ user, isSelected, onToggle, isAlreadyMember, disabledReason }) => {
+  const isDisabled = !!disabledReason || !!isAlreadyMember;
+  const badgeText = disabledReason || (isAlreadyMember ? "Already a member" : null);
+
   return (
     <TouchableOpacity
       style={[
         styles.container,
         isSelected && styles.containerSelected,
-        isAlreadyMember && styles.containerDisabled,
+        isDisabled && styles.containerDisabled,
       ]}
-      onPress={() => !isAlreadyMember && onToggle(user)}
-      disabled={isAlreadyMember}
+      onPress={() => !isDisabled && onToggle(user)}
+      disabled={isDisabled}
     >
       <View style={styles.left}>
         <Avatar
@@ -28,15 +31,15 @@ const UserCard = memo(({ user, isSelected, onToggle, isAlreadyMember }) => {
             {user.profile?.position || "Employee"} •{" "}
             {user.profile?.department || "No Department"}
           </Text>
-          {isAlreadyMember && (
+          {badgeText && (
             <View style={styles.memberBadge}>
-              <Text style={styles.memberBadgeText}>Already a member</Text>
+              <Text style={styles.memberBadgeText}>{badgeText}</Text>
             </View>
           )}
         </View>
       </View>
 
-      {!isAlreadyMember && (
+      {!isDisabled && (
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
           {isSelected && <View style={styles.checkboxInner} />}
         </View>

@@ -11,13 +11,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import TeamIcon from "../../../assets/icons/task-square.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
 import { useTeamStore } from "../../../store";
-import useUserStore from "../../../store/userStore";
 import AppButton from "../../components/appButton";
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import LabeledTextInput from "../../components/profile/labeledTextInput";
 import SelectInputField from "../../components/profile/selectInputField";
 import { LeaderSelectModal } from "../../components/team";
 import Colors from "../../styles/color";
+import teamService from "../../services/teamService";
 
 const EditTeamScreen = ({ navigation, route }) => {
   const { teamId } = route.params;
@@ -29,13 +29,8 @@ const EditTeamScreen = ({ navigation, route }) => {
     isLoading: teamLoading,
   } = useTeamStore();
 
-  const {
-    users,
-    fetchUsers,
-    isLoading: userLoading,
-    isLoadingMore,
-    pagination,
-  } = useUserStore();
+  const [leaders, setLeaders] = useState([]);
+  const [leadersLoading, setLeadersLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -80,30 +75,26 @@ const EditTeamScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     if (!showLeaderModal) return;
+    (async () => {
+      try {
+        setLeadersLoading(true);
+        const response = await teamService.getAvailableLeaders({ excludeTeamId: teamId });
+        setLeaders(response.data || []);
+      } catch (error) {
+        Alert.alert("Error", error?.error || "Failed to load leaders");
+      } finally {
+        setLeadersLoading(false);
+      }
+    })();
+  }, [showLeaderModal, teamId]);
 
-    const delayDebounceFn = setTimeout(() => {
-      fetchUsers({
-        search: searchQuery,
-        page: 1,
-        limit: 10,
-      });
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [showLeaderModal, searchQuery]);
-
-  const handleLoadMoreUsers = () => {
-    if (!userLoading && !isLoadingMore && pagination.page < pagination.pages) {
-      fetchUsers(
-        {
-          search: searchQuery,
-          page: pagination.page + 1,
-          limit: 10,
-        },
-        true
-      );
-    }
-  };
+  const filteredLeaders = leaders.filter((u) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const name = (u.profile?.fullName || "").toLowerCase();
+    const email = (u.email || "").toLowerCase();
+    return name.includes(q) || email.includes(q);
+  });
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -112,6 +103,29 @@ const EditTeamScreen = ({ navigation, route }) => {
   const handleSelectLeader = (user) => {
     setSelectedLeader(user);
     handleChange("leaderId", user._id);
+  };
+
+  const handleConfirmLeader = () => {
+    if (!selectedLeader) return;
+
+    if (selectedLeader.isLeadingAnotherTeam) {
+      Alert.alert(
+        "Not available",
+        "This team lead is already leading another team. Please choose another leader."
+      );
+      return;
+    }
+
+    const leaderTeamId = selectedLeader?.teamId?._id || selectedLeader?.teamId;
+    if (leaderTeamId && leaderTeamId !== teamId) {
+      Alert.alert(
+        "Not available",
+        "This user already belongs to another team. Please choose another leader."
+      );
+      return;
+    }
+
+    setShowLeaderModal(false);
   };
 
   const handleSubmit = async () => {
@@ -219,14 +233,16 @@ const EditTeamScreen = ({ navigation, route }) => {
       <LeaderSelectModal
         visible={showLeaderModal}
         onClose={() => setShowLeaderModal(false)}
-        users={users}
+        onConfirm={handleConfirmLeader}
+        users={filteredLeaders}
         selectedLeader={selectedLeader}
         onSelectLeader={handleSelectLeader}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        isLoading={userLoading}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={handleLoadMoreUsers}
+        isLoading={leadersLoading}
+        isLoadingMore={false}
+        onLoadMore={null}
+        currentTeamId={teamId}
       />
     </SafeAreaView>
   );
