@@ -1,17 +1,16 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import Avatar from "../avatar";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Colors from "../../styles/color";
+import Avatar from "../avatar";
 
 const MemberCard = ({ member, isLeader, onRemove, canRemove }) => {
+  const avatarUrl = member.profile?.avatar || null;
+  const avatarKey = "avt1";
+
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <Avatar
-          name={member.profile?.fullName || member.email}
-          width={48}
-          height={48}
-        />
+        <Avatar url={avatarUrl} name={avatarKey} width={48} height={48} />
         <View style={styles.info}>
           <Text style={styles.name}>
             {member.profile?.fullName || member.email}
