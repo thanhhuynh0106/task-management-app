@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import statisticsService from "../../services/statisticsService";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View, Text } from "react-native";
+import { useStatisticsStore } from "../../../store/index";
 import Colors from "../../styles/color";
 import {
   AttendanceDailyChart,
@@ -15,52 +15,38 @@ import {
 } from "./dashboard";
 
 const HRDashboardContent = ({ onRefresh }) => {
-  const [loading, setLoading] = useState(true);
-  const [overview, setOverview] = useState(null);
-  const [taskStats, setTaskStats] = useState(null);
-  const [leaveStats, setLeaveStats] = useState(null);
-  const [attendanceStats, setAttendanceStats] = useState(null);
-  const [teamPerformance, setTeamPerformance] = useState([]);
-
-  const loadAllStats = useCallback(async () => {
-    try {
-      setLoading(true);
-      const now = new Date();
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
-
-      const [overviewRes, taskRes, leaveRes, teamRes, attendanceRes] =
-        await Promise.all([
-          statisticsService.getOverviewStats(),
-          statisticsService.getTaskStats(),
-          statisticsService.getLeaveStats(year),
-          statisticsService.getTeamPerformance(),
-          statisticsService.getAttendanceStats(month, year),
-        ]);
-
-      setOverview(overviewRes.data);
-      setTaskStats(taskRes.data);
-      setLeaveStats(leaveRes.data);
-      setTeamPerformance(teamRes.data);
-      setAttendanceStats(attendanceRes.data);
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    overview,
+    taskStats,
+    leaveStats,
+    attendanceStats,
+    teamPerformance,
+    isLoading,
+    isRefreshing,
+    loadAllStats,
+    refreshStats,
+    isCacheValid,
+  } = useStatisticsStore();
 
   useEffect(() => {
-    loadAllStats();
-  }, [loadAllStats]);
+    if (!isCacheValid() || !overview) {
+      loadAllStats(false);
+    } else {
+      console.log("Using cached HR dashboard data");
+    }
+  }, []); 
 
   useEffect(() => {
     if (onRefresh) {
-      onRefresh.current = loadAllStats;
+      onRefresh.current = async () => {
+        await refreshStats();
+      };
     }
-  }, [onRefresh, loadAllStats]);
+  }, [onRefresh, refreshStats]);
 
-  if (loading) {
+  const shouldShowLoading = isLoading && !overview;
+
+  if (shouldShowLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -106,6 +92,27 @@ const styles = StyleSheet.create({
     padding: 50,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "500",
+  },
+  refreshingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+    backgroundColor: Colors.secondary,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
+  refreshingText: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontWeight: "500",
   },
 });
 

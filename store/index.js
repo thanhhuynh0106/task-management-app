@@ -6,4 +6,4 @@ export { default as useTaskStore } from './taskStore';
 export { default as useTeamStore } from './teamStore';
 export { default as useAuthStore } from './userStore';
 export { default as useUserStore } from './userStore';
-
+export { default as useStatisticsStore } from './statisticsStore';

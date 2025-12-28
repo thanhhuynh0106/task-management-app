@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, ActivityIndicator, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import HeaderWithBackButton from "../../components/headerWithBackButton";
 import MessageBubble from "../../components/message/messageBubble";
@@ -10,11 +11,13 @@ import socketService from "../../services/socketService";
 import messageService from "../../services/messageService";
 import { useAuth } from "../../contexts/authContext";
 import TypingIndicator from "@/src/components/message/typingIndicator";
+import useMessageStore from "../../../store/messageStore";
 
 
 const ChatScreen = ({ navigation, route }) => {
   const { threadName, threadId, conversationId: initialConversationId, receiverId } = route?.params || {};
   const { user } = useAuth();
+  const markAsRead = useMessageStore(state => state.markAsRead);
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [loading, setLoading] = useState(true);
@@ -76,7 +79,8 @@ const ChatScreen = ({ navigation, route }) => {
 
         if (conversationId) {
           socketService.joinConversation(conversationId);
-          socketService.markAsRead(conversationId);
+          // ✅ REMOVED: Don't auto mark as read when entering screen
+          // User needs to actually see the messages first
         }
 
         const handleNewMessage = (data) => {
@@ -94,13 +98,11 @@ const ChatScreen = ({ navigation, route }) => {
             };
             
             setMessages(prev => {
-              // Check if message already exists
               const exists = prev.some(m => m._id === newMsg._id);
               if (exists) {
                 return prev;
               }
               
-              // Replace temp message if this is own message
               if (newMsg.isOwn && data.tempId) {
                 return prev.map(m => m._id === data.tempId ? newMsg : m);
               }
@@ -108,9 +110,8 @@ const ChatScreen = ({ navigation, route }) => {
               return [...prev, newMsg];
             });
             
-            if (!newMsg.isOwn) {
-              socketService.markAsRead(conversationId);
-            }
+            // ✅ REMOVED: Don't auto mark as read when receiving message
+            // Mark as read will be triggered by user interaction (screen focus)
             
             setTimeout(() => {
               scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -124,7 +125,6 @@ const ChatScreen = ({ navigation, route }) => {
             socketService.joinConversation(data.conversationId);
           }
           
-          // Replace temp message with real message
           if (data.tempId && data.message) {
             setMessages(prev => prev.map(m => {
               if (m._id === data.tempId) {
@@ -187,6 +187,28 @@ const ChatScreen = ({ navigation, route }) => {
   useEffect(() => {
     loadMessages();
   }, [loadMessages]);
+
+  // ✅ Mark messages as read ONLY when screen mounts and messages finish loading
+  // Do NOT mark as read when new messages arrive (messages.length changes)
+  const hasMarkedAsRead = useRef(false);
+  
+  useEffect(() => {
+    if (!loading && conversationId && messages.length > 0 && socketService.isConnected() && !hasMarkedAsRead.current) {
+      // Delay to ensure messages are rendered and visible
+      const timer = setTimeout(() => {
+        socketService.markAsRead(conversationId);
+        markAsRead(conversationId);
+        hasMarkedAsRead.current = true;
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, conversationId, messages.length, markAsRead]);
+  
+  // Reset mark-as-read flag when conversation changes
+  useEffect(() => {
+    hasMarkedAsRead.current = false;
+  }, [conversationId]);
 
   const handleSendMessage = async (text, attachments = []) => {
     
@@ -294,17 +316,16 @@ const ChatScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <HeaderWithBackButton
+        title={threadName || "Chat"}
+        onBackPress={() => navigation.goBack()}
+      />
+      
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-        
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <HeaderWithBackButton
-          title={threadName || "Chat"}
-          onBackPress={() => navigation.goBack()}
-        />
-
         <ScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
@@ -358,7 +379,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.white,
-    marginBottom: 5
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
   messagesContainer: {
     flex: 1,

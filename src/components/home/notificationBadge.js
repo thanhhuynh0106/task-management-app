@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import useNotificationStore from '../../../store/notificationStore';
 
+
 const NotificationBadge = () => {
   const unreadCount = useNotificationStore(state => state.unreadCount);
   const fetchUnreadCount = useNotificationStore(state => state.fetchUnreadCount);
@@ -17,7 +18,7 @@ const NotificationBadge = () => {
       
       const interval = setInterval(() => {
         fetchUnreadCount();
-      }, 30000);
+      }, 10000);
       
       return () => clearInterval(interval);
     }, [fetchUnreadCount])

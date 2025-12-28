@@ -18,7 +18,7 @@ const useTaskStore = create((set, get) => ({
     teamId: null,
     search: '',
     page: 1,
-    limit: 10
+    limit: 100 // High limit to show all tasks without pagination
   },
 
   /**

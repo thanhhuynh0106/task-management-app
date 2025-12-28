@@ -2,6 +2,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import useMessageStore from '../../../store/messageStore';
+import socketService from '../../services/socketService';
 
 
 const MessageBadge = () => {
@@ -11,6 +12,31 @@ const MessageBadge = () => {
     useEffect(() => {
         fetchUnreadCount();
     }, []);
+
+    useEffect(() => {
+        const initSocket = async () => {
+            try {
+                if (!socketService.isConnected()) {
+                    await socketService.connect();
+                }
+
+                const handleMessageNotification = () => {
+                    fetchUnreadCount();
+                };
+
+                socketService.onMessageNotification(handleMessageNotification);
+
+                return () => {
+                    socketService.off('message_notification', handleMessageNotification);
+                };
+            } catch (error) {
+                console.error('MessageBadge socket error:', error);
+            }
+        };
+
+        initSocket();
+    }, [fetchUnreadCount]);
+
 
     useFocusEffect(
         React.useCallback(() => {

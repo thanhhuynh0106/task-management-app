@@ -2,16 +2,20 @@ import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import Colors from "../../styles/color"
 
-const SmallCard = ({totalHours, inOutTime}) => {
+const SmallCard = ({totalHours, inOutTime, isAbsent}) => {
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, isAbsent && styles.absentContainer]}>
             <View style={styles.left}>
-                <Text style={styles.topText}>Total hours</Text>
-                <Text style={styles.bottomText}>{totalHours}</Text>
+                <Text style={[styles.topText, isAbsent && styles.absentText]}>Total hours</Text>
+                <Text style={[styles.bottomText, isAbsent && styles.absentText]}>
+                    {isAbsent ? '0:00 hrs' : totalHours}
+                </Text>
             </View>
             <View style={styles.right}>
-                <Text style={styles.topText}>Clock-in & out</Text>
-                <Text style={styles.bottomText}>{inOutTime}</Text>
+                <Text style={[styles.topText, isAbsent && styles.absentText]}>Clock-in & out</Text>
+                <Text style={[styles.bottomText, isAbsent && styles.absentText]}>
+                    {isAbsent ? 'No record' : inOutTime}
+                </Text>
             </View>
         </View>
     )
@@ -26,6 +30,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: Colors.borderGray,
         flexDirection: 'row',
+    },
+    absentContainer: {
+        backgroundColor: '#F9F9F9',
+        borderColor: '#E0E0E0',
     },
     left: {
         flex: 1,
@@ -45,5 +53,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#000000',
         marginTop: 4,
+    },
+    absentText: {
+        color: '#999999',
     },
 })

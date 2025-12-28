@@ -294,7 +294,7 @@ const PendingLeavesScreen = ({ navigation }) => {
             text={"Pending"}
             subtext={leaveStats.pending}
             textStyle={{
-              fontSize: 14,
+              fontSize: 13,
             }}
             subtextStyle={{
               fontSize: 16,
@@ -306,7 +306,7 @@ const PendingLeavesScreen = ({ navigation }) => {
             text={"Approved"}
             subtext={leaveStats.approved}
             textStyle={{
-              fontSize: 14,
+              fontSize: 13,
             }}
             subtextStyle={{
               fontSize: 16,
@@ -317,7 +317,7 @@ const PendingLeavesScreen = ({ navigation }) => {
             icon={<View style={styles.rejectedDot} />}
             text={"Rejected"}
             textStyle={{
-              fontSize: 14,
+              fontSize: 13,
             }}
             subtext={leaveStats.rejected}
             subtextStyle={{
@@ -1012,21 +1012,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   pendingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: "#ffaa00ff",
   },
   approvedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: "#1ac40eff",
   },
   rejectedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: "#d13a32ff",
   },
   modalCloseButtonText: {

@@ -21,7 +21,6 @@ class SocketService {
         throw new Error('No authentication token found');
       }
 
-      // Extract base URL (remove /api if present)
       const baseUrl = API_URL.replace('/api', '');
 
       this.socket = io(baseUrl, {

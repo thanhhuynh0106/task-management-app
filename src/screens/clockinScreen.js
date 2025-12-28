@@ -142,12 +142,20 @@ const ClockinScreen = ({ navigation }) => {
     }
   };
 
-  const clockinDays = attendances.map(record => ({
-    id: record._id,
-    day: new Date(record.date).toLocaleDateString(),
-    totalHours: formatWorkHours(record.workHours),
-    inOutTime: `${formatTime(record.clockIn)} - ${formatTime(record.clockOut)}`,
-  }));
+  const clockinDays = attendances.map(record => {
+    const isIncomplete = record.clockIn && !record.clockOut && !record.autoClockOut;
+    
+    return {
+      id: record._id,
+      day: new Date(record.date).toLocaleDateString(),
+      totalHours: formatWorkHours(record.workHours),
+      inOutTime: `${formatTime(record.clockIn)} - ${formatTime(record.clockOut)}`,
+      status: record.status,
+      isCalculated: record.isCalculated || false,
+      autoClockOut: record.autoClockOut || false,
+      isIncomplete: isIncomplete,
+    };
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.secondary }}>
@@ -224,6 +232,9 @@ const ClockinScreen = ({ navigation }) => {
                 day={item.day}
                 totalHours={item.totalHours}
                 inOutTime={item.inOutTime}
+                status={item.status}
+                autoClockOut={item.autoClockOut}
+                isIncomplete={item.isIncomplete}
             />
         )) : (
           <View style={styles.emptyState}>
