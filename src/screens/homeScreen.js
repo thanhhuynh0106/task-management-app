@@ -10,7 +10,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNotificationStore, useTaskStore } from "../../store/index";
+import {
+  useNotificationStore,
+  useTaskStore,
+  useStatisticsStore,
+} from "../../store/index";
 import TodayFocusCard from "../components/home/todayFocusCard";
 import UserHeader from "../components/home/userHeader";
 import WelcomeCard from "../components/home/welcomeCard";
@@ -20,7 +24,7 @@ import Colors from "../styles/color";
 
 const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const { user } = useAuth();
   const isHR = user?.role === "hr_manager";
@@ -29,33 +33,61 @@ const HomeScreen = ({ navigation }) => {
 
   const { fetchMyTasks, fetchTaskStats } = useTaskStore();
   const { fetchUnreadCount, fetchNotifications } = useNotificationStore();
+  const { loadAllStats } = useStatisticsStore();
+
+  useEffect(() => {
+    const initialLoad = async () => {
+      setInitialLoading(true);
+      try {
+        if (isHR) {
+          await Promise.all([
+            loadAllStats(false), 
+            fetchUnreadCount(),
+            fetchNotifications({ page: 1, limit: 5 }),
+          ]);
+        } else {
+          await Promise.all([
+            fetchMyTasks({ page: 1, limit: 10, status: "in_progress" }),
+            fetchTaskStats(),
+            fetchUnreadCount(),
+            fetchNotifications({ page: 1, limit: 5 }),
+          ]);
+        }
+      } catch (error) {
+        console.error("Error loading home data:", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    initialLoad();
+  }, [isHR]); 
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchHomeData();
-
       const interval = setInterval(() => {
-        fetchHomeData(true);
+        if (isHR) {
+          loadAllStats(false);
+        } else {
+          fetchMyTasks({ page: 1, limit: 10, status: "in_progress" });
+          fetchTaskStats();
+        }
+        fetchUnreadCount();
       }, 60000);
 
       return () => clearInterval(interval);
-    }, [])
+    }, [isHR])
   );
 
-  useEffect(() => {
-    fetchUnreadCount();
-  }, []);
-
-  const fetchHomeData = async (silent = false) => {
-    if (!silent) setLoading(true);
+  const onRefresh = async () => {
+    setRefreshing(true);
 
     try {
       if (isHR) {
-        // HR only needs notifications
-        await Promise.all([
-          fetchUnreadCount(),
-          fetchNotifications({ page: 1, limit: 5 }),
-        ]);
+        if (hrDashboardRefresh.current) {
+          await hrDashboardRefresh.current();
+        }
+        await fetchNotifications({ page: 1, limit: 5 });
       } else {
         await Promise.all([
           fetchMyTasks({ page: 1, limit: 10, status: "in_progress" }),
@@ -65,23 +97,13 @@ const HomeScreen = ({ navigation }) => {
         ]);
       }
     } catch (error) {
-      console.error("Error fetching home data:", error);
+      console.error("Error refreshing:", error);
     } finally {
-      if (!silent) setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchHomeData();
-    // Refresh HR Dashboard if available
-    if (isHR && hrDashboardRefresh.current) {
-      await hrDashboardRefresh.current();
-    }
-    setRefreshing(false);
-  };
-
-  if (loading) {
+  if (initialLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar
