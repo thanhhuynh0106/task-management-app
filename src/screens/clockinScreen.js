@@ -116,6 +116,24 @@ const ClockinScreen = ({ navigation }) => {
   const { noAttendance, clockedIn, clockedOut } = buttonState;
   const todayWorkHours = getTodayWorkHours();
 
+  const getCurrentMonthRange = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    };
+    
+    return `${formatDate(firstDay)} - ${formatDate(lastDay)}`;
+  };
+
+  const monthRange = getCurrentMonthRange();
+
   const handleClockInButton = () => {
     if (noAttendance) {
       navigation.navigate("ClockInArea");
@@ -144,7 +162,7 @@ const ClockinScreen = ({ navigation }) => {
             <Text style={styles.headerText}>
               Total working hours this month!
             </Text>
-            <Text style={styles.headerSubtext}>10 Nov 2025 - 10 Dec 2025</Text>
+            <Text style={styles.headerSubtext}>{monthRange}</Text>
           </View>
           <View style={styles.body}>
             <IconCardText

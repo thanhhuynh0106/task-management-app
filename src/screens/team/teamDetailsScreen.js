@@ -124,7 +124,7 @@ const TeamDetailsScreen = ({ navigation, route }) => {
         {/* Members Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Team Members</Text>
+            <Text style={styles.sectionTitle}>Team members</Text>
             {canManage && (
               <TouchableOpacity
                 style={styles.addButton}
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#000000",
   },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#FFFFFF",
   },

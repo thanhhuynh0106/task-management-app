@@ -40,7 +40,7 @@ export default MessageBadge;
 const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
-    top: 0,
+    top: -6,
     right: 53,
     minWidth: 20,
     height: 20,

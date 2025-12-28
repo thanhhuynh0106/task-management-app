@@ -11,17 +11,18 @@ const TeamInfoCard = ({ team, membersCount, onEdit, canEdit }) => {
         <View style={styles.iconContainer}>
           <TeamIcon width={32} height={32} />
         </View>
+        <View style={{ flex: 1, marginLeft: 16, justifyContent: "center" }}>
+          <Text style={styles.name}>{team.name}</Text>
+          {team.description && (
+            <Text style={styles.description}>{team.description}</Text>
+          )}
+        </View>
         {canEdit && (
           <TouchableOpacity style={styles.editButton} onPress={onEdit}>
             <EditIcon width={20} height={20} />
           </TouchableOpacity>
         )}
       </View>
-
-      <Text style={styles.name}>{team.name}</Text>
-      {team.description && (
-        <Text style={styles.description}>{team.description}</Text>
-      )}
 
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
@@ -49,11 +50,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    flex: 1,
     justifyContent: "space-between",
+    
     alignItems: "center",
     marginBottom: 16,
   },
   iconContainer: {
+    
     width: 64,
     height: 64,
     borderRadius: 16,
@@ -70,13 +74,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   name: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 8,
   },
   description: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#666666",
     lineHeight: 20,
     marginBottom: 20,
@@ -85,14 +89,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: Colors.secondary,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
   },
   statItem: {
     flex: 1,
     alignItems: "center",
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 4,

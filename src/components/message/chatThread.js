@@ -1,7 +1,8 @@
 import React from "react"
-import { View, Text, StyleSheet, Pressable } from "react-native"
+import { View, Text, StyleSheet, Pressable, Image } from "react-native"
 import Avatar from "../avatar"
 import OnlineBadge from "./onlineBadge"
+import Colors from "../../styles/color"
 
 const chatThread = ({thread, onPress}) => {
     return (
@@ -9,8 +10,21 @@ const chatThread = ({thread, onPress}) => {
             onPress={onPress}
             style={styles.container}
         >
-            <View style={styles.avatarContainer}>
-                <Avatar name={thread.name} width={50} height={50} />
+            <View style={styles.avatarWrapper}>
+                <View style={styles.avatarContainer}>
+                    {thread.profile?.avatar ? (
+                      <Image 
+                        source={{ uri: thread.profile.avatar }} 
+                        style={styles.avatar} 
+                      />
+                    ) : (
+                      <View style={styles.avatarPlaceholder}>
+                        <Text style={styles.avatarText}>
+                          {thread.profile?.fullName?.charAt(0)?.toUpperCase() || thread.email?.charAt(0)?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
+                </View>
                 <OnlineBadge style={styles.badge} userId={thread.userId} />
             </View>
             <View style={styles.content}>
@@ -86,17 +100,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  avatarContainer: {
+  avatarWrapper: {
     position: 'relative',
     width: 50,
     height: 50,
+    marginRight: 12,
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    marginLeft: 10,
   },
   badge: {
     position: 'absolute',
-    right: 0,
+    right: -13,
     bottom: 0,
     borderWidth: 2,
     borderColor: '#fff', 
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  avatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '600',
   },
 })
 

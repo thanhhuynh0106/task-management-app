@@ -414,7 +414,7 @@ const TaskDetailScreen = () => {
               <View>
                 <Text style={styles.assigneeName}>{person.profile?.fullName || person.email}</Text>
                 <Text style={styles.assigneeRole}>
-                  {person.role?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Employee"}
+                  {person.profile?.position|| "Employee"}
                 </Text>
               </View>
             </View>

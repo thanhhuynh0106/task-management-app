@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import statisticsService from "../../services/statisticsService";
 import Colors from "../../styles/color";
 import {
-  WelcomeCard,
-  OverviewCards,
-  TaskStatusChart,
+  AttendanceDailyChart,
   LeaveTypeChart,
-  TeamPerformanceChart,
   MonthlyLeaveChart,
-  TeamPerformanceTable,
+  OverviewCards,
   SectionTitle,
+  TaskStatusChart,
+  TeamPerformanceChart,
+  TeamPerformanceTable,
+  WelcomeCard,
 } from "./dashboard";
 
 const HRDashboardContent = ({ onRefresh }) => {
@@ -18,22 +19,30 @@ const HRDashboardContent = ({ onRefresh }) => {
   const [overview, setOverview] = useState(null);
   const [taskStats, setTaskStats] = useState(null);
   const [leaveStats, setLeaveStats] = useState(null);
+  const [attendanceStats, setAttendanceStats] = useState(null);
   const [teamPerformance, setTeamPerformance] = useState([]);
 
   const loadAllStats = useCallback(async () => {
     try {
       setLoading(true);
-      const [overviewRes, taskRes, leaveRes, teamRes] = await Promise.all([
-        statisticsService.getOverviewStats(),
-        statisticsService.getTaskStats(),
-        statisticsService.getLeaveStats(new Date().getFullYear()),
-        statisticsService.getTeamPerformance(),
-      ]);
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      const [overviewRes, taskRes, leaveRes, teamRes, attendanceRes] =
+        await Promise.all([
+          statisticsService.getOverviewStats(),
+          statisticsService.getTaskStats(),
+          statisticsService.getLeaveStats(year),
+          statisticsService.getTeamPerformance(),
+          statisticsService.getAttendanceStats(month, year),
+        ]);
 
       setOverview(overviewRes.data);
       setTaskStats(taskRes.data);
       setLeaveStats(leaveRes.data);
       setTeamPerformance(teamRes.data);
+      setAttendanceStats(attendanceRes.data);
     } catch (error) {
       console.error("Error loading stats:", error);
     } finally {
@@ -68,6 +77,9 @@ const HRDashboardContent = ({ onRefresh }) => {
 
       <SectionTitle>Task Status</SectionTitle>
       <TaskStatusChart data={taskStats} />
+
+      <SectionTitle>Attendance (This Month)</SectionTitle>
+      <AttendanceDailyChart data={attendanceStats} />
 
       <SectionTitle>Leave Types</SectionTitle>
       <LeaveTypeChart data={leaveStats} />

@@ -338,11 +338,14 @@ const TaskScreen = () => {
           />
         }
       >
-        <TaskStatusCard
-          todoCount={todoCount}
-          inProgressCount={inProgressCount}
-          doneCount={doneCount}
-        />
+        {/* TaskStatusCard - Only show for My Tasks view */}
+        {selectedView === "my" && (
+          <TaskStatusCard
+            todoCount={todoCount}
+            inProgressCount={inProgressCount}
+            doneCount={doneCount}
+          />
+        )}
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>

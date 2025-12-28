@@ -1,17 +1,16 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import Avatar from "../avatar";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Colors from "../../styles/color";
+import Avatar from "../avatar";
 
 const MemberCard = ({ member, isLeader, onRemove, canRemove }) => {
+  const avatarUrl = member.profile?.avatar || null;
+  const avatarKey = "avt1";
+
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <Avatar
-          name={member.profile?.fullName || member.email}
-          width={48}
-          height={48}
-        />
+        <Avatar url={avatarUrl} name={avatarKey} width={48} height={48} />
         <View style={styles.info}>
           <Text style={styles.name}>
             {member.profile?.fullName || member.email}
@@ -21,7 +20,7 @@ const MemberCard = ({ member, isLeader, onRemove, canRemove }) => {
           </Text>
           {isLeader && (
             <View style={styles.leaderBadge}>
-              <Text style={styles.leaderBadgeText}>Team Lead</Text>
+              <Text style={styles.leaderBadgeText}>Team lead</Text>
             </View>
           )}
         </View>
@@ -58,13 +57,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: "#000000",
     marginBottom: 2,
   },
   position: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#666666",
   },
   leaderBadge: {

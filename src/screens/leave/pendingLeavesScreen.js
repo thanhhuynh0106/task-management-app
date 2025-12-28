@@ -5,8 +5,10 @@ import Colors from "../../styles/color";
 import AppButton from "../../components/appButton";
 import NoLeave from "../../../assets/icons/no_leave.svg";
 import Avatar from "../../components/avatar";
+import IconCardText from "@/src/components/task/iconCardText";
 import { useLeaveStore } from "../../../store";
 import { useAuth } from "../../contexts/authContext";
+import apiClient from "../../services/api";
 
 const PendingLeavesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -16,6 +18,12 @@ const PendingLeavesScreen = ({ navigation }) => {
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionType, setActionType] = useState(null);
+  const [allLeaves, setAllLeaves] = useState([]);
+  const [leaveStats, setLeaveStats] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
 
   const {
     pendingLeaves,
@@ -43,6 +51,21 @@ const PendingLeavesScreen = ({ navigation }) => {
   const loadData = async () => {
     try {
       await fetchPendingLeaves();
+      try {
+        const response = await apiClient.get('/leaves/statistics');
+        
+        if (response?.success) {
+          const stats = response?.stats || { pending: 0, approved: 0, rejected: 0 };
+          const leaves = response?.data || [];
+          setAllLeaves(leaves);
+          setLeaveStats(stats);
+        } else {
+        }
+      } catch (err) {
+        if (err.response?.status === 403) {
+          console.warn('User may not have proper role for statistics endpoint');
+        }
+      }
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -58,7 +81,6 @@ const PendingLeavesScreen = ({ navigation }) => {
     if (selectedTeam === "all") {
       return pendingLeaves;
     }
-    // TODO: Filter by team when backend supports it
     return pendingLeaves;
   }, [pendingLeaves, selectedTeam]);
 
@@ -258,7 +280,55 @@ const PendingLeavesScreen = ({ navigation }) => {
         color={Colors.primary}
       />
 
-      <View style={styles.filterContainer}>
+      {/* Statistics Summary */}
+      <View style={styles.summary}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Leaves statistics</Text>
+          <Text style={styles.headerSubtext}>
+            Total leave requests overview
+          </Text>
+        </View>
+        <View style={styles.body}>
+          <IconCardText
+            icon={<View style={styles.pendingDot} />}
+            text={"Pending"}
+            subtext={leaveStats.pending}
+            textStyle={{
+              fontSize: 14,
+            }}
+            subtextStyle={{
+              fontSize: 16,
+              fontWeight: "bold",
+            }}
+          />
+          <IconCardText
+            icon={<View style={styles.approvedDot} />}
+            text={"Approved"}
+            subtext={leaveStats.approved}
+            textStyle={{
+              fontSize: 14,
+            }}
+            subtextStyle={{
+              fontSize: 16,
+              fontWeight: "bold",
+            }}
+          />
+          <IconCardText
+            icon={<View style={styles.rejectedDot} />}
+            text={"Rejected"}
+            textStyle={{
+              fontSize: 14,
+            }}
+            subtext={leaveStats.rejected}
+            subtextStyle={{
+              fontSize: 16,
+              fontWeight: "bold",
+            }}
+          />
+        </View>
+      </View>
+
+      {/* <View style={styles.filterContainer}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -284,7 +354,7 @@ const PendingLeavesScreen = ({ navigation }) => {
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </View> */}
 
       <ScrollView
         style={styles.scrollViewContent}
@@ -536,7 +606,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   scrollViewContent: {
-    paddingTop: 20,
     flex: 1,
   },
   scrollViewContainer: {
@@ -915,6 +984,50 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  summary: {
+    marginTop: -80,
+    marginHorizontal: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  header: {
+    marginBottom: 16,
+    gap: 7,
+  },
+  headerText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  headerSubtext: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#666666",
+  },
+  body: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  pendingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ffaa00ff",
+  },
+  approvedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1ac40eff",
+  },
+  rejectedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#d13a32ff",
   },
   modalCloseButtonText: {
     fontSize: 15,

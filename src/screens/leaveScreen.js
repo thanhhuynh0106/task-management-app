@@ -114,6 +114,25 @@ const LeaveScreen = ({ navigation }) => {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  // Tính toán ngày đầu và cuối năm hiện tại
+  const getCurrentYearRange = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), 0, 1);
+    const lastDay = new Date(today.getFullYear(), 11, 31);
+    
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    };
+    
+    return `${formatDate(firstDay)} - ${formatDate(lastDay)}`;
+  };
+
+  const yearRange = getCurrentYearRange();
+
   const renderLeaveCard = (item) => {
     const startDateFormatted = formatDate(item.startDate);
     const endDateFormatted = formatDate(item.endDate);
@@ -256,8 +275,7 @@ const LeaveScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.headerText}>Total Leave</Text>
           <Text style={styles.headerSubtext}>
-            Period 1 Jan {new Date().getFullYear()} - 30 Dec{" "}
-            {new Date().getFullYear()}
+            Period {yearRange}
           </Text>
         </View>
         <View style={styles.body}>

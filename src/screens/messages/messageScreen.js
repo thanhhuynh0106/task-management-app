@@ -47,7 +47,9 @@ const MessageScreen = ({ navigation }) => {
           unreadCount: conv.unreadCount || 0,
           participant: conv.participant,
           userId: conv.participant?._id,
-          lastMessageAt: conv.lastMessageAt
+          lastMessageAt: conv.lastMessageAt,
+          profile: conv.participant?.profile,
+          email: conv.participant?.email
         }));
         
         formattedConversations.sort((a, b) => {

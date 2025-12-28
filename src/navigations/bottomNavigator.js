@@ -76,7 +76,7 @@ const BottomNavigator = () => {
                     ),
                 }}
             />
-            {user?.role !== "employee" && (
+            {user?.role === "hr_manager" && (
                 <Bottom.Screen
                     name="team"
                     component={TeamStackNavigator}

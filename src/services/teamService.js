@@ -144,6 +144,20 @@ const teamService = {
       throw error;
     }
   },
+
+  /**
+   * Get available leaders (team_lead only) with leading status
+   * @param {Object} params - { excludeTeamId }
+   * @returns {Promise}
+   */
+  getAvailableLeaders: async (params = {}) => {
+    try {
+      const response = await apiClient.get(`/teams/available-leaders`, { params });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 export default teamService;

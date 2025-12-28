@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable, TextInput, Alert, ActivityIndicator, } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Colors from "../styles/color";
 import HeaderWithBackButton from "../components/headerWithBackButton";
 import AppButton from "../components/appButton";
@@ -11,6 +11,7 @@ import Category from "../../assets/icons/category.svg";
 import Calendar from "../../assets/icons/calendar-2.svg";
 import Delegation from "../../assets/icons/user_delegation.svg";
 import { leaveService } from "../services";
+import { useLeaveStore } from "../../store";
 
 const mockLeaveCategories = [
   { id: 1, name: "Vacation Leave", value: "vacation", days: 12 },
@@ -18,24 +19,9 @@ const mockLeaveCategories = [
   { id: 3, name: "Personal Leave", value: "personal", days: 12 },
 ];
 
-// const mockTaskDelegation = [
-//   { id: 1, name: "John Doe", position: "Senior Developer" },
-//   { id: 2, name: "Jane Smith", position: "Project Manager" },
-//   { id: 3, name: "Mike Johnson", position: "Team Lead" },
-//   { id: 4, name: "Sarah Williams", position: "Developer" },
-//   { id: 5, name: "Tom Brown", position: "Designer" },
-// ];
-
-// const mockCountryCodes = [
-//   { id: 1, code: "+84", country: "Vietnam", flag: "🇻🇳" },
-//   { id: 2, code: "+1", country: "USA", flag: "🇺🇸" },
-//   { id: 3, code: "+44", country: "UK", flag: "🇬🇧" },
-//   { id: 4, code: "+81", country: "Japan", flag: "🇯🇵" },
-//   { id: 5, code: "+82", country: "South Korea", flag: "🇰🇷" },
-//   { id: 6, code: "+86", country: "China", flag: "🇨🇳" },
-// ];
-
 const SubmitLeaveScreen = ({ navigation }) => {
+  const { leaves, fetchLeaves } = useLeaveStore();
+  
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedDelegate, setSelectedDelegate] = useState(null);
   const [selectedDates, setSelectedDates] = useState({
@@ -51,6 +37,10 @@ const SubmitLeaveScreen = ({ navigation }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [tempStartDate, setTempStartDate] = useState(null);
   const [tempEndDate, setTempEndDate] = useState(null);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -104,17 +94,93 @@ const SubmitLeaveScreen = ({ navigation }) => {
     return time >= start.getTime() && time <= end.getTime();
   };
 
+
+  const isPastDate = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate < today;
+  };
+
+  const isDateTaken = (date) => {
+    if (!date) return false;
+    
+    return leaves.some(leave => {
+      if (leave.status !== 'pending' && leave.status !== 'approved') {
+        return false;
+      }
+      
+      const leaveStart = new Date(leave.startDate);
+      const leaveEnd = new Date(leave.endDate);
+      const checkDate = new Date(date);
+      
+      leaveStart.setHours(0, 0, 0, 0);
+      leaveEnd.setHours(0, 0, 0, 0);
+      checkDate.setHours(0, 0, 0, 0);
+      
+      return checkDate >= leaveStart && checkDate <= leaveEnd;
+    });
+  };
+
+  const isDateDisabled = (date) => {
+    return isPastDate(date) || isDateTaken(date);
+  };
+
+  const isAnyDateInRangeTaken = (startDate, endDate) => {
+    if (!startDate || !endDate) return false;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      if (isDateTaken(currentDate)) {
+        return true;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return false;
+  };
+
   const handleDatePress = (date) => {
+    if (isDateDisabled(date)) {
+      Alert.alert(
+        'Cannot select date',
+        isPastDate(date) 
+          ? 'Cannot select past dates' 
+          : 'This date already has a leave request'
+      );
+      return;
+    }
+
     if (!tempStartDate || (tempStartDate && tempEndDate)) {
       setTempStartDate(date);
       setTempEndDate(null);
     } else {
+      let newStartDate, newEndDate;
       if (date >= tempStartDate) {
-        setTempEndDate(date);
+        newStartDate = tempStartDate;
+        newEndDate = date;
       } else {
-        setTempEndDate(tempStartDate);
-        setTempStartDate(date);
+        newStartDate = date;
+        newEndDate = tempStartDate;
       }
+      
+      if (isAnyDateInRangeTaken(newStartDate, newEndDate)) {
+        Alert.alert(
+          'Cannot select date range',
+          'The selected date range contains dates that already have leave requests. Please select consecutive available dates only.'
+        );
+        return;
+      }
+
+      setTempStartDate(newStartDate);
+      setTempEndDate(newEndDate);
     }
   };
 
@@ -273,6 +339,7 @@ const SubmitLeaveScreen = ({ navigation }) => {
                 tempStartDate &&
                 tempEndDate &&
                 isDateInRange(date, tempStartDate, tempEndDate);
+              const disabled = date && isDateDisabled(date);
 
               return (
                 <TouchableOpacity
@@ -282,15 +349,17 @@ const SubmitLeaveScreen = ({ navigation }) => {
                     !date && styles.emptyDay,
                     (isStart || isEnd) && styles.selectedDay,
                     inRange && !isStart && !isEnd && styles.rangeDay,
+                    disabled && styles.disabledDay,
                   ]}
                   onPress={() => date && handleDatePress(date)}
-                  disabled={!date}
+                  disabled={!date || disabled}
                 >
                   {date && (
                     <Text
                       style={[
                         styles.calendarDayText,
                         (isStart || isEnd) && styles.selectedDayText,
+                        disabled && styles.disabledDayText,
                       ]}
                     >
                       {date.getDate()}
@@ -890,6 +959,14 @@ const styles = StyleSheet.create({
   selectedDayText: {
     color: "#FFFFFF",
     fontWeight: "700",
+  },
+  disabledDay: {
+    backgroundColor: "#F5F5F5",
+    opacity: 0.5,
+  },
+  disabledDayText: {
+    color: "#CCCCCC",
+    textDecorationLine: "line-through",
   },
   selectedDatesInfo: {
     paddingHorizontal: 20,

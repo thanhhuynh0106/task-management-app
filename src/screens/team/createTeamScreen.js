@@ -13,21 +13,16 @@ import SelectInputField from "../../components/profile/selectInputField";
 import AppButton from "../../components/appButton";
 import Colors from "../../styles/color";
 import { useTeamStore } from "../../../store";
-import { useUserStore } from "../../../store";
 import { LeaderSelectModal } from "../../components/team";
 import TeamIcon from "../../../assets/icons/task-square.svg";
 import UserIcon from "../../../assets/icons/user_delegation.svg";
+import teamService from "../../services/teamService";
 
 const CreateTeamScreen = ({ navigation }) => {
   const { createTeam, isLoading: teamLoading } = useTeamStore();
 
-  const {
-    users,
-    fetchUsers,
-    isLoading: userLoading,
-    isLoadingMore,
-    pagination,
-  } = useUserStore();
+  const [leaders, setLeaders] = useState([]);
+  const [leadersLoading, setLeadersLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,30 +37,26 @@ const CreateTeamScreen = ({ navigation }) => {
 
   useEffect(() => {
     if (!showLeaderModal) return;
+    (async () => {
+      try {
+        setLeadersLoading(true);
+        const response = await teamService.getAvailableLeaders();
+        setLeaders(response.data || []);
+      } catch (error) {
+        Alert.alert("Error", error?.error || "Failed to load leaders");
+      } finally {
+        setLeadersLoading(false);
+      }
+    })();
+  }, [showLeaderModal]);
 
-    const delayDebounceFn = setTimeout(() => {
-      fetchUsers({
-        search: searchQuery,
-        page: 1,
-        limit: 10,
-      });
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [showLeaderModal, searchQuery]);
-
-  const handleLoadMoreUsers = () => {
-    if (!userLoading && !isLoadingMore && pagination.page < pagination.pages) {
-      fetchUsers(
-        {
-          search: searchQuery,
-          page: pagination.page + 1,
-          limit: 10,
-        },
-        true
-      );
-    }
-  };
+  const filteredLeaders = leaders.filter((u) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const name = (u.profile?.fullName || "").toLowerCase();
+    const email = (u.email || "").toLowerCase();
+    return name.includes(q) || email.includes(q);
+  });
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -74,6 +65,28 @@ const CreateTeamScreen = ({ navigation }) => {
   const handleSelectLeader = (user) => {
     setSelectedLeader(user);
     handleChange("leaderId", user._id);
+  };
+
+  const handleConfirmLeader = () => {
+    if (!selectedLeader) return;
+
+    if (selectedLeader.isLeadingAnotherTeam) {
+      Alert.alert(
+        "Not available",
+        "This team lead is already leading another team. Please choose another leader."
+      );
+      return;
+    }
+
+    if (selectedLeader.teamId) {
+      Alert.alert(
+        "Not available",
+        "This user already belongs to a team. Please choose another leader."
+      );
+      return;
+    }
+
+    setShowLeaderModal(false);
   };
 
   const handleSubmit = async () => {
@@ -166,14 +179,15 @@ const CreateTeamScreen = ({ navigation }) => {
       <LeaderSelectModal
         visible={showLeaderModal}
         onClose={() => setShowLeaderModal(false)}
-        users={users}
+        onConfirm={handleConfirmLeader}
+        users={filteredLeaders}
         selectedLeader={selectedLeader}
         onSelectLeader={handleSelectLeader}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        isLoading={userLoading}
-        isLoadingMore={isLoadingMore}
-        onLoadMore={handleLoadMoreUsers}
+        isLoading={leadersLoading}
+        isLoadingMore={false}
+        onLoadMore={null}
       />
     </SafeAreaView>
   );

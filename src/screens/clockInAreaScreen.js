@@ -222,7 +222,7 @@ const ClockInAreaScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>SCHEDULE</Text>
           <View style={styles.scheduleCard}>
             <View style={styles.scheduleItem}>
@@ -235,7 +235,7 @@ const ClockInAreaScreen = ({ navigation }) => {
               <Text style={styles.scheduleTime}>17:00</Text>
             </View>
           </View>
-        </View>    
+        </View>     */}
 
         <TouchableOpacity
           style={[

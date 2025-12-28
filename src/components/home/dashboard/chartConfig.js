@@ -1,12 +1,28 @@
 import Colors from "../../../styles/color";
 
+export const rgbaFromHex = (hex, opacity = 1) => {
+  if (!hex || typeof hex !== "string") {
+    return `rgba(0, 0, 0, ${opacity})`;
+  }
+
+  const normalized = hex.replace("#", "").trim();
+  const six = normalized.length >= 6 ? normalized.substring(0, 6) : "000000";
+  const r = parseInt(six.substring(0, 2), 16);
+  const g = parseInt(six.substring(2, 4), 16);
+  const b = parseInt(six.substring(4, 6), 16);
+
+  return `rgba(${Number.isFinite(r) ? r : 0}, ${Number.isFinite(g) ? g : 0}, ${
+    Number.isFinite(b) ? b : 0
+  }, ${opacity})`;
+};
+
 export const baseChartConfig = {
-  backgroundColor: "#ffffff",
-  backgroundGradientFrom: "#ffffff",
-  backgroundGradientTo: "#ffffff",
+  backgroundColor: Colors.white,
+  backgroundGradientFrom: Colors.white,
+  backgroundGradientTo: Colors.white,
   decimalPlaces: 0,
-  color: (opacity = 1) => `rgba(112, 87, 252, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(16, 24, 40, ${opacity})`,
+  color: (opacity = 1) => rgbaFromHex(Colors.primary, opacity),
+  labelColor: (opacity = 1) => rgbaFromHex(Colors.black, opacity),
   style: {
     borderRadius: 16,
   },
@@ -14,6 +30,12 @@ export const baseChartConfig = {
     r: "5",
     strokeWidth: "2",
     stroke: Colors.primary,
+  },
+  propsForBackgroundLines: {
+    stroke: rgbaFromHex(Colors.black, 0.08),
+  },
+  propsForLabels: {
+    fontSize: 10,
   },
 };
 

@@ -9,7 +9,7 @@ const Avatar = ({ name, url, width = 54, height = 54, style }) => {
     (url.startsWith("http://") ||
       url.startsWith("https://") ||
       url.startsWith("file://") ||
-      url.startsWith("content://")) // Android content URI
+      url.startsWith("content://"))
   ) {
     return (
       <View

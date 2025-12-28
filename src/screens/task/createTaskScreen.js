@@ -73,6 +73,11 @@ const CreateTaskScreen = ({ navigation }) => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [tempTeam, setTempTeam] = useState(null);
+
   
   useEffect(() => {
     if (!canManageTasks?.()) {
@@ -85,15 +90,34 @@ const CreateTaskScreen = ({ navigation }) => {
   }, [canManageTasks]);
 
   useEffect(() => {
-    fetchTeamMembers();
+    fetchTeams();
   }, []);
+
+  useEffect(() => {
+    fetchTeamMembers();
+  }, [selectedTeam?._id, user?.role, user?.teamId]);
+
+  const fetchTeams = async () => {
+    if (user?.role !== "hr_manager") return;
+    try {
+      const response = await teamService.getAllTeams({ page: 1, limit: 200 });
+      setTeams(response?.data || []);
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+      Alert.alert("Error", "Failed to load teams");
+    }
+  };
 
   const fetchTeamMembers = async () => {
     setLoadingMembers(true);
     try {
       let response;
       if (user?.role === "hr_manager") {
-        response = await teamService.getAllMembers();
+        if (!selectedTeam?._id) {
+          setTeamMembers([]);
+          return;
+        }
+        response = await teamService.getTeamMembers(selectedTeam._id);
       } else if (user?.role === "team_lead" && user?.teamId) {
         response = await teamService.getTeamMembers(user.teamId);
       }
@@ -280,6 +304,7 @@ const CreateTaskScreen = ({ navigation }) => {
   const validateTaskData = () => {
     if (!taskTitle.trim()) return { valid: false, message: 'Task title is required' };
     if (selectedMembers.length === 0) return { valid: false, message: 'At least one assignee is required' };
+    if (user?.role === 'hr_manager' && !selectedTeam?._id) return { valid: false, message: 'Team is required' };
     if (!startDate) return { valid: false, message: 'Start date is required' };
     if (!dueDate) return { valid: false, message: 'Due date is required' };
     if (new Date(dueDate) < new Date(startDate)) return { valid: false, message: 'Due date cannot be earlier than start date' };
@@ -343,6 +368,16 @@ const CreateTaskScreen = ({ navigation }) => {
 
   const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
 
+  // Kiểm tra ngày đã qua
+  const isPastDate = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate < today;
+  };
+
   const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
 
@@ -387,21 +422,39 @@ const CreateTaskScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.calendarGrid}>
-            {getDaysInMonth(currentMonth).map((day, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.calendarDay, !day && styles.emptyDay]}
-                onPress={() => day && setTempDate(day)}
-              >
-                {day && (
-                  <View style={[styles.dayCircle, isSameDay(day, tempDate) && styles.selectedDay]}>
-                    <Text style={[styles.calendarDayText, isSameDay(day, tempDate) && styles.selectedDayText]}>
-                      {day.getDate()}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
+            {getDaysInMonth(currentMonth).map((day, idx) => {
+              const disabled = day && isPastDate(day);
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.calendarDay, !day && styles.emptyDay]}
+                  onPress={() => {
+                    if (day && !disabled) {
+                      setTempDate(day);
+                    } else if (disabled) {
+                      Alert.alert('Cannot select date', 'Cannot select past dates');
+                    }
+                  }}
+                  disabled={!day || disabled}
+                >
+                  {day && (
+                    <View style={[
+                      styles.dayCircle,
+                      isSameDay(day, tempDate) && styles.selectedDay,
+                      disabled && styles.disabledDay
+                    ]}>
+                      <Text style={[
+                        styles.calendarDayText,
+                        isSameDay(day, tempDate) && styles.selectedDayText,
+                        disabled && styles.disabledDayText
+                      ]}>
+                        {day.getDate()}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.modalButtons}>
@@ -424,11 +477,12 @@ const CreateTaskScreen = ({ navigation }) => {
     setIsUploading(true);
   
     try {
+      const resolvedTeamId = user?.role === 'hr_manager' ? selectedTeam?._id : user?.teamId;
       const taskPayload = {
         title: taskTitle.trim(),
         description: taskDescription.trim(),
         assignedTo: selectedMembers.map((m) => m._id),
-        teamId: user?.teamId,
+        teamId: resolvedTeamId,
         priority: selectedPriority?.id || "medium",
         difficulty: "medium",
         attachments: [],
@@ -538,13 +592,13 @@ const CreateTaskScreen = ({ navigation }) => {
                     styles.modalItem,
                     (multiSelect
                       ? isMemberSelected(item, selectedItems)
-                      : selectedItems?.id === item.id) && styles.modalItemSelected,
+                      : (selectedItems?._id || selectedItems?.id) === (item._id || item.id)) && styles.modalItemSelected,
                   ]}
                   onPress={() => onSelectItem(item)}
                 >
                   {renderItem(item, multiSelect
                     ? isMemberSelected(item, selectedItems)
-                    : selectedItems?.id === item.id)}
+                    : (selectedItems?._id || selectedItems?.id) === (item._id || item.id))}
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -761,6 +815,19 @@ const CreateTaskScreen = ({ navigation }) => {
             {renderDateSelector("Start Date", startDate, "start")}
             {renderDateSelector("Due Date", dueDate, "due")}
 
+            {/* Team (HR only) */}
+            {user?.role === "hr_manager" &&
+              renderSelector(
+                "Team",
+                selectedTeam?.name,
+                "Select team",
+                () => {
+                  setTempTeam(selectedTeam);
+                  setShowTeamModal(true);
+                },
+                Category
+              )}
+
             {/* Assign To */}
             {renderSelector(
               "Assign to",
@@ -769,6 +836,10 @@ const CreateTaskScreen = ({ navigation }) => {
                 : null,
               "Select members",
               () => {
+                if (user?.role === "hr_manager" && !selectedTeam?._id) {
+                  Alert.alert("Validation Error", "Please select a team first");
+                  return;
+                }
                 setTempMembers(selectedMembers);
                 setShowMemberModal(true);
               },
@@ -862,6 +933,37 @@ const CreateTaskScreen = ({ navigation }) => {
           </View>
         ),
         true
+      )}
+
+      {/* Team Modal (HR only) */}
+      {renderBottomModal(
+        showTeamModal,
+        () => setShowTeamModal(false),
+        () => {
+          setSelectedTeam(tempTeam);
+          setSelectedMembers([]);
+          setTempMembers([]);
+          setShowTeamModal(false);
+        },
+        teams,
+        tempTeam,
+        setTempTeam,
+        "Select Team",
+        (item, isSelected) => (
+          <View style={styles.modalItemContent}>
+            <View>
+              <Text style={[styles.itemName, isSelected && styles.itemNameSelected]}>
+                {item.name}
+              </Text>
+              <Text style={styles.itemSubtext}>{item.description || ""}</Text>
+            </View>
+            {isSelected && (
+              <View style={styles.selectedIndicator}>
+                <Text style={styles.checkmark}>✓</Text>
+              </View>
+            )}
+          </View>
+        )
       )}
 
       {/* Priority Modal */}
@@ -1328,7 +1430,15 @@ const styles = StyleSheet.create({
   emptyDay: { backgroundColor: 'transparent' },
   dayCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   selectedDay: { backgroundColor: Colors.primary },
+  disabledDay: {
+    backgroundColor: '#F5F5F5',
+    opacity: 0.5,
+  },
   calendarDayText: { fontSize: 15, color: '#000000', fontWeight: '500' },
   selectedDayText: { color: '#FFFFFF', fontWeight: '700' },
+  disabledDayText: {
+    color: '#CCCCCC',
+    textDecorationLine: 'line-through',
+  },
   calendarModalContent: { backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
 });

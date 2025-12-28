@@ -16,6 +16,7 @@ import SearchIcon from "../../../assets/icons/search.svg";
 const LeaderSelectModal = ({
   visible,
   onClose,
+  onConfirm,
   users,
   selectedLeader,
   onSelectLeader,
@@ -24,9 +25,15 @@ const LeaderSelectModal = ({
   isLoading,
   isLoadingMore,
   onLoadMore,
+  currentTeamId,
 }) => {
   const renderUserItem = useCallback(
-    ({ item }) => (
+    ({ item }) => {
+      const isLeadingAnotherTeam = !!item?.isLeadingAnotherTeam;
+      const teamId = item?.teamId?._id || item?.teamId;
+      const isInAnotherTeam = !!teamId && (!currentTeamId || teamId !== currentTeamId);
+
+      return (
       <TouchableOpacity
         style={[
           styles.modalItem,
@@ -48,14 +55,25 @@ const LeaderSelectModal = ({
               {item.profile?.position || "Employee"} •{" "}
               {item.profile?.department || "No Department"}
             </Text>
+
+            {(isLeadingAnotherTeam || isInAnotherTeam) && (
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusBadgeText}>
+                  {isLeadingAnotherTeam
+                    ? "Already leading another team"
+                    : "Already in a team"}
+                </Text>
+              </View>
+            )}
           </View>
           {selectedLeader?._id === item._id && (
             <View style={styles.selectedIndicator} />
           )}
         </View>
       </TouchableOpacity>
-    ),
-    [selectedLeader, onSelectLeader]
+      );
+    },
+    [selectedLeader, onSelectLeader, currentTeamId]
   );
 
   return (
@@ -135,7 +153,7 @@ const LeaderSelectModal = ({
                 styles.modalButtonConfirm,
                 !selectedLeader && styles.modalButtonDisabled,
               ]}
-              onPress={onClose}
+              onPress={onConfirm || onClose}
               disabled={!selectedLeader}
             >
               <Text style={styles.modalButtonTextConfirm}>Confirm</Text>
@@ -273,6 +291,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  statusBadge: {
+    backgroundColor: "#FFD700" + "40",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginTop: 6,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#B8860B",
   },
 });
 

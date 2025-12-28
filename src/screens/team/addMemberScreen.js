@@ -82,8 +82,21 @@ const AddMemberScreen = ({ navigation, route }) => {
   };
 
   const isUserAlreadyMember = (userId) => {
-    if (!currentTeam?.members) return false;
-    return currentTeam.members.some((member) => member._id === userId);
+    if (!currentTeam?.memberIds) return false;
+    return currentTeam.memberIds.some((member) => member._id === userId);
+  };
+
+  const getDisabledReason = (user) => {
+    if (!user) return null;
+    if (isUserAlreadyMember(user._id)) return "Already a member";
+
+    const userTeamId = user?.teamId?._id || user?.teamId;
+    if (userTeamId) {
+      if (userTeamId === teamId) return "Already in this team";
+      return "In another team";
+    }
+
+    return null;
   };
 
   const handleToggleUser = useCallback((user) => {
@@ -159,15 +172,19 @@ const AddMemberScreen = ({ navigation, route }) => {
   };
 
   const renderItem = useCallback(
-    ({ item }) => (
-      <UserCard
-        user={item}
-        isSelected={isUserSelected(item._id)}
-        onToggle={handleToggleUser}
-        isAlreadyMember={isUserAlreadyMember(item._id)}
-      />
-    ),
-    [selectedUsers, currentTeam]
+    ({ item }) => {
+      const disabledReason = getDisabledReason(item);
+      return (
+        <UserCard
+          user={item}
+          isSelected={isUserSelected(item._id)}
+          onToggle={handleToggleUser}
+          isAlreadyMember={isUserAlreadyMember(item._id)}
+          disabledReason={disabledReason}
+        />
+      );
+    },
+    [selectedUsers, currentTeam, teamId]
   );
 
   if (isInitializing) {
