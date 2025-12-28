@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
   ActivityIndicator,
   Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import Colors from "../styles/color";
-import HeaderPromo from "../components/headerPromo";
-import AppButton from "../components/appButton";
-import { TeamCard } from "../components/team";
-import { useTeamStore } from "../../store";
-import { useAuth } from "../contexts/authContext";
 import NoSchedules from "../../assets/icons/no_schedules.svg";
+import { useTeamStore } from "../../store";
+import AppButton from "../components/appButton";
+import HeaderPromo from "../components/headerPromo";
+import { TeamCard } from "../components/team";
+import { useAuth } from "../contexts/authContext";
+import Colors from "../styles/color";
 
 const TeamScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -56,7 +56,7 @@ const TeamScreen = ({ navigation }) => {
     <View style={{ flex: 1, backgroundColor: Colors.secondary }}>
       <HeaderPromo
         text="Team Collaboration"
-        subtext="Work together, achieve together and grow together. "
+        subtext="Work together, achieve together, and build a successful future through collaboration and shared vision."
         color={Colors.primary}
       />
 
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginTop: -89,
+    marginTop: -40,
   },
   header: {
     backgroundColor: Colors.white,

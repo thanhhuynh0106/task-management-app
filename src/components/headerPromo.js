@@ -31,5 +31,6 @@ const styles = StyleSheet.create({
         fontWeight: '400',
         marginTop: 8,
         marginLeft: 24,
+        marginRight: 48,
     },
 })
