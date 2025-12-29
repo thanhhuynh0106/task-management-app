@@ -444,7 +444,7 @@ const TaskDetailScreen = () => {
         </View>
 
         {/* Status Checkbox */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Status</Text>
           {(selectedTask.assignedTo?.some((p) => p._id === user?._id) || canManageTask) ? (
             <View style={styles.statusCheckboxContainer}>
@@ -499,7 +499,7 @@ const TaskDetailScreen = () => {
               <Text style={styles.statusBadgeText}>{statusConfig.label}</Text>
             </View>
           )}
-        </View>
+        </View> */}
 
         {/* Comments */}
         <View style={styles.section}>
