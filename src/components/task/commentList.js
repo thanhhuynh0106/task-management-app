@@ -2,6 +2,7 @@ import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Colors from "../../styles/color";
 import Send from "../../../assets/icons/send.svg";
+import Avatar from "../avatar";
 
 const CommentList = ({ comments = [] }) => {
   const formatDateTime = (date) => {
@@ -31,30 +32,34 @@ const CommentList = ({ comments = [] }) => {
 
   return (
     <View style={styles.container}>
-      {comments.map((comment, index) => (
-        <View key={comment._id || index} style={styles.commentItem}>
+      {comments.map((comment, index) => {
+        const userId = typeof comment.userId === 'string' ? comment.userId : comment.userId;
+        const userProfile = comment.userId?.profile || {};
+        const userName = userProfile?.fullName || comment.userId?.email || "Unknown";
+        const userPosition = userProfile?.position || "Employee";
+        const userAvatar = comment.userId?.avatar || userProfile?.avatar;
+        
+        return (
+        <View key={comment._id || `comment-${index}-${comment.createdAt || Date.now()}`} style={styles.commentItem}>
           <View style={styles.commentHeader}>
             <View style={styles.commentUser}>
               <View style={styles.avatarContainer}>
-                {comment.userId?.avatar ? (
-                  <Image
-                    source={{ uri: comment.userId.avatar }}
-                    style={styles.avatar}
-                  />
+                {userAvatar ? (
+                  <Avatar url={userAvatar} name={userId} width={36} height={36} />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <Text style={styles.avatarText}>
-                      {comment.userId?.profile?.fullName?.charAt(0)?.toUpperCase() || "?"}
+                      {userName?.charAt(0)?.toUpperCase() || "?"}
                     </Text>
                   </View>
                 )}
               </View>
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>
-                  {comment.userId?.profile?.fullName || "Unknown"}
+                  {userName}
                 </Text>
                 <Text style={styles.userRole}>
-                  {comment.userId?.profile?.position || "Employee"}
+                  {userPosition}
                 </Text>
               </View>
             </View>
@@ -64,7 +69,7 @@ const CommentList = ({ comments = [] }) => {
           </View>
           <Text style={styles.commentText}>{comment.text}</Text>
         </View>
-      ))}
+      )})}
     </View>
   );
 };

@@ -54,6 +54,8 @@ const ClockInAreaScreen = ({ navigation }) => {
   const { clockIn, clockOut, isLoading } = useAttendanceStore();
   const { user } = useAuth();
 
+  const avatarUrl = user.profile?.avatar || null;
+
   useEffect(() => {
     getUserLocation();
   }, []);
@@ -209,7 +211,7 @@ const ClockInAreaScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>MY PROFILE</Text>
           <View style={styles.profileCard}>
-            <Avatar name={user?.profile?.fullName || user?.email || "User"} width={48} height={48} />
+            <Avatar url={avatarUrl} name={user._id} width={60} height={60} />
             <View style={styles.profileInfo}>
               <View style={styles.profileRow}>
                 <Text style={styles.profileName}>{user?.profile?.fullName || user?.email}</Text>

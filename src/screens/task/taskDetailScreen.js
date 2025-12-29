@@ -18,6 +18,7 @@ import SubtaskProgress from "../../components/task/subtaskProgress";
 import Colors from "../../styles/color";
 import { downloadFile } from "../../utils/downloadHelper";
 import { getAbsoluteFileUrl } from "../../utils/fileUrlHelper";
+import Avatar from "@/src/components/avatar";
 
 const TaskDetailScreen = () => {
   const navigation = useNavigation();
@@ -200,6 +201,9 @@ const TaskDetailScreen = () => {
   }
 
   const canManageTask = canManageTasks();
+  const isAssignedToTask = selectedTask.assignedTo?.some((p) => p._id === user?._id);
+  const canToggleSubtasks = isAssignedToTask || canManageTask;
+  const canAddDeleteSubtasks = canManageTask;
   const statusKey = selectedTask.status === "in_progress" ? "inprogress" : selectedTask.status;
   const StatusIcon = CategoryMap[statusKey] || DefaultCategory;
   const statusConfig = getStatusConfig(selectedTask.status);
@@ -403,7 +407,7 @@ const TaskDetailScreen = () => {
           {selectedTask.assignedTo?.map((person) => (
             <View key={person._id} style={styles.assigneeItem}>
               {person.profile?.avatar ? (
-                <Image source={{ uri: person.profile.avatar }} style={styles.avatar} />
+                <Avatar url={person.profile.avatar} name={person._id} width={44} height={44} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarText}>
@@ -427,11 +431,11 @@ const TaskDetailScreen = () => {
           <SubtaskProgress subtasks={selectedTask.subTasks || []} />
           <SubTaskList 
             subtasks={selectedTask.subTasks || []} 
-            onSubtaskToggle={handleToggleSubtask}
-            onSubtaskDelete={handleDeleteSubtask}
-            editable={canManageTask}
+            onSubtaskToggle={canToggleSubtasks ? handleToggleSubtask : undefined}
+            onSubtaskDelete={canAddDeleteSubtasks ? handleDeleteSubtask : undefined}
+            editable={canToggleSubtasks}
           />
-          {canManageTask && (
+          {canAddDeleteSubtasks && (
             <AddSubtaskInput 
               onAddSubtask={handleAddSubtask}
               isLoading={isAddingSubtask}
@@ -714,7 +718,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
 
-  assigneeItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  assigneeItem: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginBottom: 8,
+  },
   avatar: { width: 30, height: 30, borderRadius: 15, marginRight: 12 },
   avatarPlaceholder: {
     width: 30,
@@ -726,8 +734,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarText: { color: "#FFF", fontSize: 18, fontWeight: "600" },
-  assigneeName: { fontSize: 15, fontWeight: "600", color: "#000" },
-  assigneeRole: { fontSize: 13, color: Colors.primary, marginTop: 2 },
+  assigneeName: { 
+    fontSize: 15, 
+    fontWeight: "600", 
+    color: "#000",
+    marginLeft: 10,
+  },
+  assigneeRole: { 
+    fontSize: 13, 
+    color: Colors.primary, 
+    marginTop: 2,
+    marginLeft: 10,
+  },
 
   statusCheckboxContainer: {
     flexDirection: "row",

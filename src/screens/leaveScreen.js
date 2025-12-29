@@ -405,7 +405,7 @@ const LeaveScreen = ({ navigation }) => {
               <>
                 <Text style={styles.modalTitle}>Leave Details</Text>
                 <Text style={{fontSize:14, fontWeight:"600", color:"#505050ff", alignSelf:"center", marginBottom:10}}>
-                  Submitted by: {"User"}
+                  Submitted by you on {formatDate(selectedLeave.createdAt)}
                 </Text>
                 <View style={styles.leaveRow}>
                     <Text style={styles.modalLabel}>Leave Type</Text>

@@ -16,6 +16,7 @@ import {
   useStatisticsStore,
 } from "../../store/index";
 import TodayFocusCard from "../components/home/todayFocusCard";
+import OverdueTaskCard from "../components/home/overdueTaskCard";
 import UserHeader from "../components/home/userHeader";
 import WelcomeCard from "../components/home/welcomeCard";
 import HRDashboardContent from "../components/home/hrDashboardContent";
@@ -47,7 +48,7 @@ const HomeScreen = ({ navigation }) => {
           ]);
         } else {
           await Promise.all([
-            fetchMyTasks({ page: 1, limit: 10, status: "in_progress" }),
+            fetchMyTasks(),
             fetchTaskStats(),
             fetchUnreadCount(),
             fetchNotifications({ page: 1, limit: 5 }),
@@ -69,7 +70,7 @@ const HomeScreen = ({ navigation }) => {
         if (isHR) {
           loadAllStats(false);
         } else {
-          fetchMyTasks({ page: 1, limit: 10, status: "in_progress" });
+          fetchMyTasks();
           fetchTaskStats();
         }
         fetchUnreadCount();
@@ -90,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
         await fetchNotifications({ page: 1, limit: 5 });
       } else {
         await Promise.all([
-          fetchMyTasks({ page: 1, limit: 10, status: "in_progress" }),
+          fetchMyTasks(),
           fetchTaskStats(),
           fetchUnreadCount(),
           fetchNotifications({ page: 1, limit: 5 }),
@@ -147,6 +148,7 @@ const HomeScreen = ({ navigation }) => {
           <>
             <WelcomeCard />
             <TodayFocusCard navigation={navigation} />
+            <OverdueTaskCard navigation={navigation} />
           </>
         )}
       </ScrollView>

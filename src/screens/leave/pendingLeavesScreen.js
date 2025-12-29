@@ -195,7 +195,7 @@ const PendingLeavesScreen = ({ navigation }) => {
     const startDateFormatted = formatDate(item.startDate);
     const endDateFormatted = formatDate(item.endDate);
     const employeeName = item.userId?.profile?.fullName || item.userId?.email || "Unknown Employee";
-
+    const employeeAvatar = item.userId?.profile?.avatar || null;
     return (
       <Pressable
         key={item._id}
@@ -204,9 +204,10 @@ const PendingLeavesScreen = ({ navigation }) => {
       >
         <View style={styles.employeeSection}>
           <Avatar 
-            name={employeeName} 
-            width={40} 
-            height={40} 
+            url={employeeAvatar}
+            name={employeeName}
+            width={48}
+            height={48}
           />
           <View style={styles.employeeInfo}>
             <Text style={styles.employeeName}>{employeeName}</Text>
@@ -423,6 +424,7 @@ const PendingLeavesScreen = ({ navigation }) => {
                   
                   <View style={styles.modalEmployeeSection}>
                     <Avatar 
+                      url={selectedLeave.userId?.profile?.avatar || null}
                       name={selectedLeave.userId?.profile?.fullName|| selectedLeave.userId?.email || "Unknown"} 
                       width={56} 
                       height={56} 

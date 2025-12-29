@@ -15,13 +15,25 @@ const TodayFocusCard = ({ navigation }) => {
     now.setHours(0, 0, 0, 0);
 
     const sorted = [...myTasks]
-      .filter(task => 
-        task.status === "in_progress" || 
-        task.status === "todo"
-      )
+      .filter(task => {
+        // Only include todo or in_progress tasks
+        if (task.status !== "in_progress" && task.status !== "todo") {
+          return false;
+        }
+
+        // Exclude overdue tasks (they're shown in OverdueTaskCard)
+        if (task.dueDate) {
+          const due = new Date(task.dueDate);
+          due.setHours(0, 0, 0, 0);
+          if (due < now) {
+            return false; // Skip overdue tasks
+          }
+        }
+
+        return true;
+      })
       .map(task => {
         const due = task.dueDate ? new Date(task.dueDate) : null;
-
         due?.setHours(0, 0, 0, 0);
 
         let sortPriority = 0;
@@ -29,15 +41,19 @@ const TodayFocusCard = ({ navigation }) => {
 
         if (due) {
           const diffDays = Math.floor((due - now) / (1000 * 60 * 60 * 24));
-          if (diffDays < 0) {
-            sortPriority = 100 + Math.abs(diffDays);
-            dueLabel = `Overdue ${Math.abs(diffDays)}d`;
-          } else if (diffDays === 0) {
+          
+          if (diffDays === 0) {
             sortPriority = 90;
             dueLabel = "Today";
-          } else if (diffDays <= 2) {
-            sortPriority = 80 - diffDays;
-            dueLabel = diffDays === 1 ? "Tomorrow" : `In ${diffDays} days`;
+          } else if (diffDays === 1) {
+            sortPriority = 80;
+            dueLabel = "Tomorrow";
+          } else if (diffDays <= 3) {
+            sortPriority = 70 - diffDays;
+            dueLabel = `In ${diffDays} days`;
+          } else if (diffDays <= 7) {
+            sortPriority = 50 - diffDays;
+            dueLabel = `In ${diffDays} days`;
           } else {
             sortPriority = 10;
             dueLabel = due.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -80,8 +96,8 @@ const TodayFocusCard = ({ navigation }) => {
 
         <Text style={styles.subtitle}>
           {priorityTasks.length > 0 
-            ? "Your most important tasks for today" 
-            : "No urgent tasks right now. Enjoy your day!"}
+            ? "Focus on these upcoming tasks" 
+            : "No upcoming tasks. You're all set!"}
         </Text>
 
         {priorityTasks.length === 0 ? (
@@ -89,7 +105,7 @@ const TodayFocusCard = ({ navigation }) => {
             <NoTask width={100} height={80} />
             <Text style={styles.emptyTitle}>All caught up!</Text>
             <Text style={styles.emptyText}>
-              You're all set. No urgent tasks today.
+              No upcoming tasks. Keep up the good work!
             </Text>
           </View>
         ) : (
@@ -97,13 +113,7 @@ const TodayFocusCard = ({ navigation }) => {
             {priorityTasks.map((task) => (
             <TouchableOpacity
                 key={task._id}
-                onPress={() => navigation.navigate('Main', {
-                screen: 'task',
-                params: {
-                    screen: 'TaskDetail',
-                    params: { taskId: task._id }
-                }
-                })}
+                onPress={() => navigation.navigate('TaskDetail', { taskId: task._id })}
                 activeOpacity={0.7}
             >
                 <View style={styles.taskItem}>

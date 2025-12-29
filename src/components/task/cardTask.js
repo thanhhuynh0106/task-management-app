@@ -5,6 +5,7 @@ import Colors from "../../styles/color";
 import AppButton from "./../appButton";
 import ProgressBar from "./../progressBar";
 import TaskCategory from "./../taskCategory";
+import Avatar from "../avatar";
 
 const CardTask = ({ 
   name, 
@@ -53,10 +54,12 @@ const CardTask = ({
             key={assignee._id || index} 
             style={[styles.avatarContainer, { marginLeft: index > 0 ? -8 : 0 }]}
           >
-            {assignee.avatar ? (
-              <Image 
-                source={{ uri: assignee.avatar }} 
-                style={styles.avatar}
+            {assignee.profile?.avatar ? (
+              <Avatar 
+                url={assignee.profile.avatar} 
+                name={assignee.profile?.fullName || assignee.email} 
+                width={24} 
+                height={24} 
               />
             ) : (
               <View style={styles.avatarPlaceholder}>
@@ -146,7 +149,6 @@ export default CardTask;
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
-    marginTop: 16,
   },
   container: {
     backgroundColor: Colors.frame,

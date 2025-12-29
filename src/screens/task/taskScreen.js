@@ -263,7 +263,7 @@ const TaskScreen = () => {
             </View>
           )}
 
-          {/* View Toggle - Only show if user can view all tasks */}
+
           {canViewAllTasks && (
             <View style={styles.viewToggle}>
               <TouchableOpacity
@@ -338,7 +338,6 @@ const TaskScreen = () => {
           />
         }
       >
-        {/* TaskStatusCard - Only show for My Tasks view */}
         {selectedView === "my" && (
           <TaskStatusCard
             todoCount={todoCount}
@@ -435,7 +434,7 @@ const TaskScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button - Only for Team Lead and HR Manager */}
+
       {canManageTasks && canManageTasks() && (
         <TouchableOpacity
           style={styles.fab}

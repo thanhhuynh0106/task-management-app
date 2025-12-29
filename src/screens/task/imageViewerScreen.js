@@ -1,15 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Dimensions,
-  ActivityIndicator,
-  Text,
-  Image,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Text, Image, Alert} from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Colors from "../../styles/color";
 import { downloadFile } from "../../utils/downloadHelper";
@@ -164,6 +154,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 20,
+    marginBottom: 30,
     gap: 12,
   },
   navButton: {

@@ -1,22 +1,16 @@
 import { useAuth } from "@/src/contexts/authContext";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View,} from "react-native";
 import SendIcon from "../../../assets/icons/send.svg";
 import useTaskStore from "../../../store/taskStore";
 import Colors from "../../styles/color";
+import Avatar from "../avatar";
 
 const AddComment = ({ taskId }) => {
   const { user } = useAuth();
   const { addComment, isLoading } = useTaskStore();
   const [commentText, setCommentText] = useState("");
+
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
@@ -32,8 +26,8 @@ const AddComment = ({ taskId }) => {
   return (
     <View style={styles.container}>
       <View style={styles.avatarContainer}>
-        {user?.avatar ? (
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
+        {user.profile?.avatar ? (
+          <Avatar url={user.profile.avatar} name={user?.profile?.fullName} width={36} height={36} />
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>
